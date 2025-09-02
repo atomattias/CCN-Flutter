@@ -1,0 +1,105 @@
+trigger:
+- dev
+- master
+
+pr:
+- dev
+- master
+
+pool:
+  vmImage: 'macos-latest'  # Choose macOS for Flutter iOS builds
+
+variables:
+  FLUTTER_CHANNEL: 'stable'
+  FLUTTER_VERSION: '2.5.0'
+
+stages:
+# - stage: InstallDependencies
+#   jobs:
+#   - job: InstallFlutter
+#     displayName: 'Install Flutter and Dependencies'
+
+- stage: BuildAndTest
+  # dependsOn: InstallDependencies
+  jobs:
+  - job: BuildAndTestJob
+    displayName: 'Build and Test Flutter App'
+    steps:
+    - script: |
+        sudo snap install flutter --classic
+        flutter sdk-path
+      displayName: 'Install Flutter and Dependencies'
+    - script: |
+        flutter --version
+        flutter pub get
+      displayName: 'Checking Flutter Version'
+    - script: flutter analyze
+      displayName: 'Flutter Code Analysis'
+    - script: flutter test
+      displayName: 'Run Flutter Tests'
+    - script: flutter format --dry-run --set-exit-if-changed .
+      displayName: 'Check for Dart Formatting Issues'
+    - script: flutter format --set-exit-if-changed .
+      displayName: 'Fix Dart Formatting Issues'
+    - script: flutter build apk
+      displayName: 'Build APK'
+    - task: PublishBuildArtifacts@1
+      inputs:
+        pathtoPublish: 'build/app/outputs/flutter-apk/'
+
+- stage: CodeQuality
+  dependsOn: BuildAndTest
+  jobs:
+  - job: CodeQualityJob
+    displayName: 'Code Quality Check'
+    steps:
+    - script: flutter analyze
+      displayName: 'Run Flutter Code Analysis'
+    - script: flutter format --set-exit-if-changed --dry-run .
+      displayName: 'Check for Dart Formatting Issues (Print Statements)'
+    - script: |
+        grep -R -n 'print(' .
+        if [ $? -eq 0 ]; then
+          echo "Error: Found 'print(' statements in the code. Remove print statements for professional code."
+          exit 1
+        fi
+      displayName: 'Check for Print Statements'
+
+- stage: Deploy
+  dependsOn: CodeQuality
+  jobs:
+  - deployment: DeployToDev
+    displayName: 'Deploy to Development'
+    pool:
+      vmImage: 'macos-latest'
+    environment: 'Dev'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - script: echo 'Deploying to Development'
+
+  - deployment: DeployToProd
+    displayName: 'Deploy to Production'
+    pool:
+      vmImage: 'macos-latest'
+    environment: 'Production'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - script: echo 'Deploying to Production'
+
+- stage: Approve
+  displayName: 'Manual Approval'
+  jobs:
+  - deployment: Approval
+    pool:
+      vmImage: 'macos-latest'
+    environment: 'Production'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - script: echo 'Waiting for approval...'
+            displayName: 'Manual Validation'
