@@ -9,7 +9,11 @@
     "watch-ts": "tsc -w",
     "build": "tsc",
     "devStart": "nodemon src/app.ts",
-    "swagger": "node src/swagger.mjs"
+    "swagger": "node src/swagger.mjs",
+    "train-ai": "ts-node src/scripts/trainAIModel.ts",
+    "ai:train": "ts-node src/scripts/trainAIModel.ts",
+    "ai:test": "ts-node -e \"import('./src/services/aiAlgorithms/clinicalAISystem').then(system => { const ai = new system.default(); ai.initialize(); })\"",
+    "ai:load": "ts-node -e \"import('./src/services/aiAlgorithms/tensorflowCNN').then(cnn => { const model = new cnn.TensorFlowMedicalCNN(); model.loadModel('./models/medical-cnn-v1.0').then(() => console.log('✅ Model loaded successfully!')).catch(e => console.error('❌ Failed:', e)); })\""
   },
   "keywords": [
     "hepeps",
@@ -21,6 +25,10 @@
   "author": "Nathan Kulewoshie",
   "license": "MIT",
   "dependencies": {
+    "@tensorflow/tfjs-converter": "^4.22.0",
+    "@tensorflow/tfjs-core": "^4.22.0",
+    "@tensorflow/tfjs-layers": "^4.22.0",
+    "@tensorflow/tfjs-node": "^4.22.0",
     "@types/cors": "^2.8.19",
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",

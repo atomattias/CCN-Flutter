@@ -16,6 +16,7 @@ import swaggerUI from "swagger-ui-express";
 import errorHandler from "errorhandler";
 import { ROLE } from "./models/userModel";
 import fileRoute from "./routes/fileRoutes";
+import aiModelRoutes from "./routes/aiModelRoutes";
 
 // instances
 const app: Application = express();
@@ -45,7 +46,7 @@ const meetingRouter = new MeetingRouter();
 
 // middleware
 app.use(cors({
-  origin: ['http://localhost:8080', 'http://localhost:8081'],
+  origin: ['http://localhost:8080', 'http://localhost:8081', 'http://192.168.1.224:8081'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -65,6 +66,7 @@ app.use(
 app.use("/api/file", fileRoute); 
 app.use("/api/chat", middlewares.auth, chatRouter.router);
 app.use("/api/meeting", middlewares.auth, meetingRouter.router);
+app.use("/api/ai", aiModelRoutes);
 io.use(middlewares.socket);
 
 io.on("connection", async (socket) => {
