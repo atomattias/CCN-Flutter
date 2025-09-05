@@ -8,6 +8,7 @@ const CCNMobileApp: React.FC = () => {
   const [password, setPassword] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentScreen, setCurrentScreen] = useState('home');
+  const [selectedChannel, setSelectedChannel] = useState(null);
 
   const handleLogin = () => {
     if (email === 'admin@test.com' && password === 'admin123456') {
@@ -20,6 +21,7 @@ const CCNMobileApp: React.FC = () => {
   const handleLogout = () => {
     setIsLoggedIn(false);
     setCurrentScreen('home');
+    setSelectedChannel(null);
     setEmail('');
     setPassword('');
   };
@@ -283,7 +285,7 @@ const CCNMobileApp: React.FC = () => {
             </View>
 
             <View style={styles.channelList}>
-              <TouchableOpacity style={styles.channelItem}>
+              <TouchableOpacity style={styles.channelItem} onPress={() => { setSelectedChannel('cardiology'); setCurrentScreen('channel'); }}>
                 <View style={styles.channelIcon}>
                   <Text style={styles.channelEmoji}>❤️</Text>
                 </View>
@@ -297,7 +299,7 @@ const CCNMobileApp: React.FC = () => {
                 </View>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.channelItem}>
+              <TouchableOpacity style={styles.channelItem} onPress={() => { setSelectedChannel('emergency'); setCurrentScreen('channel'); }}>
                 <View style={styles.channelIcon}>
                   <Text style={styles.channelEmoji}>🚨</Text>
                 </View>
@@ -311,7 +313,7 @@ const CCNMobileApp: React.FC = () => {
                 </View>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.channelItem}>
+              <TouchableOpacity style={styles.channelItem} onPress={() => { setSelectedChannel('radiology'); setCurrentScreen('channel'); }}>
                 <View style={styles.channelIcon}>
                   <Text style={styles.channelEmoji}>📷</Text>
                 </View>
@@ -325,7 +327,7 @@ const CCNMobileApp: React.FC = () => {
                 </View>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.channelItem}>
+              <TouchableOpacity style={styles.channelItem} onPress={() => { setSelectedChannel('pediatrics'); setCurrentScreen('channel'); }}>
                 <View style={styles.channelIcon}>
                   <Text style={styles.channelEmoji}>👶</Text>
                 </View>
@@ -339,7 +341,7 @@ const CCNMobileApp: React.FC = () => {
                 </View>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.channelItem}>
+              <TouchableOpacity style={styles.channelItem} onPress={() => { setSelectedChannel('general'); setCurrentScreen('channel'); }}>
                 <View style={styles.channelIcon}>
                   <Text style={styles.channelEmoji}>🩺</Text>
                 </View>
@@ -441,6 +443,474 @@ const CCNMobileApp: React.FC = () => {
                 <Text style={styles.metricValue}>100%</Text>
               </View>
             </View>
+          </View>
+        )}
+
+        {currentScreen === 'channel' && (
+          <View>
+            <TouchableOpacity style={styles.backButton} onPress={() => { setCurrentScreen('channels'); setSelectedChannel(null); }}>
+              <Text style={styles.backText}>← Back to Channels</Text>
+            </TouchableOpacity>
+            
+            {selectedChannel === 'cardiology' && (
+              <View>
+                <View style={styles.channelHeader}>
+                  <View style={styles.channelHeaderIcon}>
+                    <Text style={styles.channelHeaderEmoji}>❤️</Text>
+                  </View>
+                  <View style={styles.channelHeaderInfo}>
+                    <Text style={styles.channelHeaderTitle}>Cardiology</Text>
+                    <Text style={styles.channelHeaderSubtitle}>Heart and Cardiovascular System</Text>
+                    <Text style={styles.channelHeaderStats}>342 members • 12 online • 24 discussions today</Text>
+                  </View>
+                </View>
+
+                <View style={styles.channelTabs}>
+                  <TouchableOpacity style={styles.channelTab}>
+                    <Text style={styles.channelTabText}>Discussions</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.channelTab}>
+                    <Text style={styles.channelTabText}>Cases</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.channelTab}>
+                    <Text style={styles.channelTabText}>Resources</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.channelContent}>
+                  <View style={styles.discussionItem}>
+                    <View style={styles.discussionHeader}>
+                      <View style={styles.discussionAvatar}>
+                        <Text style={styles.discussionAvatarText}>DR</Text>
+                      </View>
+                      <View style={styles.discussionInfo}>
+                        <Text style={styles.discussionAuthor}>Dr. Sarah Johnson</Text>
+                        <Text style={styles.discussionTime}>2 hours ago</Text>
+                      </View>
+                      <View style={styles.discussionBadge}>
+                        <Text style={styles.discussionBadgeText}>Hot</Text>
+                      </View>
+                    </View>
+                    <Text style={styles.discussionTitle}>Acute MI Management Protocol</Text>
+                    <Text style={styles.discussionPreview}>What's the latest evidence on dual antiplatelet therapy duration for STEMI patients?</Text>
+                    <View style={styles.discussionStats}>
+                      <Text style={styles.discussionStat}>💬 12 replies</Text>
+                      <Text style={styles.discussionStat}>👍 8 likes</Text>
+                      <Text style={styles.discussionStat}>👁️ 45 views</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.discussionItem}>
+                    <View style={styles.discussionHeader}>
+                      <View style={styles.discussionAvatar}>
+                        <Text style={styles.discussionAvatarText}>MR</Text>
+                      </View>
+                      <View style={styles.discussionInfo}>
+                        <Text style={styles.discussionAuthor}>Dr. Michael Rodriguez</Text>
+                        <Text style={styles.discussionTime}>4 hours ago</Text>
+                      </View>
+                    </View>
+                    <Text style={styles.discussionTitle}>Echocardiogram Interpretation</Text>
+                    <Text style={styles.discussionPreview}>Need help interpreting this echo showing moderate mitral regurgitation...</Text>
+                    <View style={styles.discussionStats}>
+                      <Text style={styles.discussionStat}>💬 7 replies</Text>
+                      <Text style={styles.discussionStat}>👍 5 likes</Text>
+                      <Text style={styles.discussionStat}>👁️ 32 views</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.discussionItem}>
+                    <View style={styles.discussionHeader}>
+                      <View style={styles.discussionAvatar}>
+                        <Text style={styles.discussionAvatarText}>AL</Text>
+                      </View>
+                      <View style={styles.discussionInfo}>
+                        <Text style={styles.discussionAuthor}>Dr. Alice Lee</Text>
+                        <Text style={styles.discussionTime}>6 hours ago</Text>
+                      </View>
+                    </View>
+                    <Text style={styles.discussionTitle}>Heart Failure Guidelines Update</Text>
+                    <Text style={styles.discussionPreview}>New ESC guidelines for heart failure management - key changes and implications</Text>
+                    <View style={styles.discussionStats}>
+                      <Text style={styles.discussionStat}>💬 15 replies</Text>
+                      <Text style={styles.discussionStat}>👍 12 likes</Text>
+                      <Text style={styles.discussionStat}>👁️ 67 views</Text>
+                    </View>
+                  </View>
+                </View>
+
+                <TouchableOpacity style={styles.primaryButton}>
+                  <Text style={styles.primaryButtonText}>Start New Discussion</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {selectedChannel === 'emergency' && (
+              <View>
+                <View style={styles.channelHeader}>
+                  <View style={styles.channelHeaderIcon}>
+                    <Text style={styles.channelHeaderEmoji}>🚨</Text>
+                  </View>
+                  <View style={styles.channelHeaderInfo}>
+                    <Text style={styles.channelHeaderTitle}>Emergency Medicine</Text>
+                    <Text style={styles.channelHeaderSubtitle}>Urgent Care and Trauma</Text>
+                    <Text style={styles.channelHeaderStats}>189 members • 8 online • 15 cases today</Text>
+                  </View>
+                </View>
+
+                <View style={styles.channelTabs}>
+                  <TouchableOpacity style={styles.channelTab}>
+                    <Text style={styles.channelTabText}>Active Cases</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.channelTab}>
+                    <Text style={styles.channelTabText}>Protocols</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.channelTab}>
+                    <Text style={styles.channelTabText}>Alerts</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.channelContent}>
+                  <View style={styles.emergencyAlert}>
+                    <View style={styles.alertHeader}>
+                      <Text style={styles.alertIcon}>🚨</Text>
+                      <Text style={styles.alertTitle}>URGENT: Trauma Protocol</Text>
+                      <Text style={styles.alertTime}>5 min ago</Text>
+                    </View>
+                    <Text style={styles.alertMessage}>Multiple trauma victims incoming - activate Level 1 trauma protocol</Text>
+                    <View style={styles.alertActions}>
+                      <TouchableOpacity style={styles.alertButton}>
+                        <Text style={styles.alertButtonText}>Acknowledge</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.alertButtonSecondary}>
+                        <Text style={styles.alertButtonSecondaryText}>View Details</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  <View style={styles.discussionItem}>
+                    <View style={styles.discussionHeader}>
+                      <View style={styles.discussionAvatar}>
+                        <Text style={styles.discussionAvatarText}>DR</Text>
+                      </View>
+                      <View style={styles.discussionInfo}>
+                        <Text style={styles.discussionAuthor}>Dr. Sarah Johnson</Text>
+                        <Text style={styles.discussionTime}>1 hour ago</Text>
+                      </View>
+                      <View style={styles.discussionBadge}>
+                        <Text style={styles.discussionBadgeText}>Active</Text>
+                      </View>
+                    </View>
+                    <Text style={styles.discussionTitle}>Chest Pain Workup</Text>
+                    <Text style={styles.discussionPreview}>65-year-old male with acute chest pain, normal EKG, elevated troponins...</Text>
+                    <View style={styles.discussionStats}>
+                      <Text style={styles.discussionStat}>💬 8 replies</Text>
+                      <Text style={styles.discussionStat}>👍 3 likes</Text>
+                      <Text style={styles.discussionStat}>👁️ 28 views</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.discussionItem}>
+                    <View style={styles.discussionHeader}>
+                      <View style={styles.discussionAvatar}>
+                        <Text style={styles.discussionAvatarText}>MR</Text>
+                      </View>
+                      <View style={styles.discussionInfo}>
+                        <Text style={styles.discussionAuthor}>Dr. Michael Rodriguez</Text>
+                        <Text style={styles.discussionTime}>3 hours ago</Text>
+                      </View>
+                    </View>
+                    <Text style={styles.discussionTitle}>Sepsis Protocol Update</Text>
+                    <Text style={styles.discussionPreview}>New sepsis bundle requirements - antibiotic timing and fluid resuscitation</Text>
+                    <View style={styles.discussionStats}>
+                      <Text style={styles.discussionStat}>💬 12 replies</Text>
+                      <Text style={styles.discussionStat}>👍 9 likes</Text>
+                      <Text style={styles.discussionStat}>👁️ 41 views</Text>
+                    </View>
+                  </View>
+                </View>
+
+                <TouchableOpacity style={styles.primaryButton}>
+                  <Text style={styles.primaryButtonText}>Report Emergency Case</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {selectedChannel === 'radiology' && (
+              <View>
+                <View style={styles.channelHeader}>
+                  <View style={styles.channelHeaderIcon}>
+                    <Text style={styles.channelHeaderEmoji}>📷</Text>
+                  </View>
+                  <View style={styles.channelHeaderInfo}>
+                    <Text style={styles.channelHeaderTitle}>Radiology</Text>
+                    <Text style={styles.channelHeaderSubtitle}>Medical Imaging and Diagnostics</Text>
+                    <Text style={styles.channelHeaderStats}>156 members • 5 online • 18 studies today</Text>
+                  </View>
+                </View>
+
+                <View style={styles.channelTabs}>
+                  <TouchableOpacity style={styles.channelTab}>
+                    <Text style={styles.channelTabText}>Studies</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.channelTab}>
+                    <Text style={styles.channelTabText}>AI Analysis</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.channelTab}>
+                    <Text style={styles.channelTabText}>Protocols</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.channelContent}>
+                  <View style={styles.studyItem}>
+                    <View style={styles.studyHeader}>
+                      <View style={styles.studyAvatar}>
+                        <Text style={styles.studyAvatarText}>DR</Text>
+                      </View>
+                      <View style={styles.studyInfo}>
+                        <Text style={styles.studyAuthor}>Dr. Sarah Johnson</Text>
+                        <Text style={styles.studyTime}>30 min ago</Text>
+                      </View>
+                      <View style={styles.studyBadge}>
+                        <Text style={styles.studyBadgeText}>AI Ready</Text>
+                      </View>
+                    </View>
+                    <Text style={styles.studyTitle}>Chest X-Ray - Pneumonia</Text>
+                    <Text style={styles.studyPreview}>45-year-old female with fever and cough. Please review for consolidation patterns.</Text>
+                    <View style={styles.studyStats}>
+                      <Text style={styles.studyStat}>🤖 AI Analysis: 87% confidence</Text>
+                      <Text style={styles.studyStat}>👁️ 12 views</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.studyItem}>
+                    <View style={styles.studyHeader}>
+                      <View style={styles.studyAvatar}>
+                        <Text style={styles.studyAvatarText}>MR</Text>
+                      </View>
+                      <View style={styles.studyInfo}>
+                        <Text style={styles.studyAuthor}>Dr. Michael Rodriguez</Text>
+                        <Text style={styles.studyTime}>2 hours ago</Text>
+                      </View>
+                    </View>
+                    <Text style={styles.studyTitle}>CT Abdomen - Appendicitis</Text>
+                    <Text style={styles.studyPreview}>28-year-old male with RLQ pain. CT shows possible appendiceal wall thickening.</Text>
+                    <View style={styles.studyStats}>
+                      <Text style={styles.studyStat}>🤖 AI Analysis: 92% confidence</Text>
+                      <Text style={styles.studyStat}>👁️ 8 views</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.studyItem}>
+                    <View style={styles.studyHeader}>
+                      <View style={styles.studyAvatar}>
+                        <Text style={styles.studyAvatarText}>AL</Text>
+                      </View>
+                      <View style={styles.studyInfo}>
+                        <Text style={styles.studyAuthor}>Dr. Alice Lee</Text>
+                        <Text style={styles.studyTime}>4 hours ago</Text>
+                      </View>
+                    </View>
+                    <Text style={styles.studyTitle}>MRI Brain - Stroke</Text>
+                    <Text style={styles.studyPreview}>67-year-old male with acute onset weakness. DWI shows hyperintense lesion in MCA territory.</Text>
+                    <View style={styles.studyStats}>
+                      <Text style={styles.studyStat}>🤖 AI Analysis: 95% confidence</Text>
+                      <Text style={styles.studyStat}>👁️ 15 views</Text>
+                    </View>
+                  </View>
+                </View>
+
+                <TouchableOpacity style={styles.primaryButton}>
+                  <Text style={styles.primaryButtonText}>Upload New Study</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {selectedChannel === 'pediatrics' && (
+              <View>
+                <View style={styles.channelHeader}>
+                  <View style={styles.channelHeaderIcon}>
+                    <Text style={styles.channelHeaderEmoji}>👶</Text>
+                  </View>
+                  <View style={styles.channelHeaderInfo}>
+                    <Text style={styles.channelHeaderTitle}>Pediatrics</Text>
+                    <Text style={styles.channelHeaderSubtitle}>Child and Adolescent Medicine</Text>
+                    <Text style={styles.channelHeaderStats}>278 members • 15 online • 22 cases today</Text>
+                  </View>
+                </View>
+
+                <View style={styles.channelTabs}>
+                  <TouchableOpacity style={styles.channelTab}>
+                    <Text style={styles.channelTabText}>Cases</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.channelTab}>
+                    <Text style={styles.channelTabText}>Growth Charts</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.channelTab}>
+                    <Text style={styles.channelTabText}>Vaccines</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.channelContent}>
+                  <View style={styles.discussionItem}>
+                    <View style={styles.discussionHeader}>
+                      <View style={styles.discussionAvatar}>
+                        <Text style={styles.discussionAvatarText}>DR</Text>
+                      </View>
+                      <View style={styles.discussionInfo}>
+                        <Text style={styles.discussionAuthor}>Dr. Sarah Johnson</Text>
+                        <Text style={styles.discussionTime}>1 hour ago</Text>
+                      </View>
+                      <View style={styles.discussionBadge}>
+                        <Text style={styles.discussionBadgeText}>Urgent</Text>
+                      </View>
+                    </View>
+                    <Text style={styles.discussionTitle}>Febrile Seizure in 18-month-old</Text>
+                    <Text style={styles.discussionPreview}>First-time febrile seizure, temperature 39.2°C, duration 2 minutes. Need guidance on workup.</Text>
+                    <View style={styles.discussionStats}>
+                      <Text style={styles.discussionStat}>💬 6 replies</Text>
+                      <Text style={styles.discussionStat}>👍 4 likes</Text>
+                      <Text style={styles.discussionStat}>👁️ 23 views</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.discussionItem}>
+                    <View style={styles.discussionHeader}>
+                      <View style={styles.discussionAvatar}>
+                        <Text style={styles.discussionAvatarText}>MR</Text>
+                      </View>
+                      <View style={styles.discussionInfo}>
+                        <Text style={styles.discussionAuthor}>Dr. Michael Rodriguez</Text>
+                        <Text style={styles.discussionTime}>3 hours ago</Text>
+                      </View>
+                    </View>
+                    <Text style={styles.discussionTitle}>ADHD Medication Management</Text>
+                    <Text style={styles.discussionPreview}>8-year-old with ADHD, current on methylphenidate. Parents concerned about side effects.</Text>
+                    <View style={styles.discussionStats}>
+                      <Text style={styles.discussionStat}>💬 9 replies</Text>
+                      <Text style={styles.discussionStat}>👍 7 likes</Text>
+                      <Text style={styles.discussionStat}>👁️ 31 views</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.discussionItem}>
+                    <View style={styles.discussionHeader}>
+                      <View style={styles.discussionAvatar}>
+                        <Text style={styles.discussionAvatarText}>AL</Text>
+                      </View>
+                      <View style={styles.discussionInfo}>
+                        <Text style={styles.discussionAuthor}>Dr. Alice Lee</Text>
+                        <Text style={styles.discussionTime}>5 hours ago</Text>
+                      </View>
+                    </View>
+                    <Text style={styles.discussionTitle}>Vaccination Schedule Update</Text>
+                    <Text style={styles.discussionPreview}>New CDC recommendations for COVID-19 vaccination in children 6 months to 5 years</Text>
+                    <View style={styles.discussionStats}>
+                      <Text style={styles.discussionStat}>💬 14 replies</Text>
+                      <Text style={styles.discussionStat}>👍 11 likes</Text>
+                      <Text style={styles.discussionStat}>👁️ 52 views</Text>
+                    </View>
+                  </View>
+                </View>
+
+                <TouchableOpacity style={styles.primaryButton}>
+                  <Text style={styles.primaryButtonText}>Post Pediatric Case</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {selectedChannel === 'general' && (
+              <View>
+                <View style={styles.channelHeader}>
+                  <View style={styles.channelHeaderIcon}>
+                    <Text style={styles.channelHeaderEmoji}>🩺</Text>
+                  </View>
+                  <View style={styles.channelHeaderInfo}>
+                    <Text style={styles.channelHeaderTitle}>General Medicine</Text>
+                    <Text style={styles.channelHeaderSubtitle}>Primary Care and General Practice</Text>
+                    <Text style={styles.channelHeaderStats}>445 members • 23 online • 35 discussions today</Text>
+                  </View>
+                </View>
+
+                <View style={styles.channelTabs}>
+                  <TouchableOpacity style={styles.channelTab}>
+                    <Text style={styles.channelTabText}>General</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.channelTab}>
+                    <Text style={styles.channelTabText}>Prevention</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.channelTab}>
+                    <Text style={styles.channelTabText}>Guidelines</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.channelContent}>
+                  <View style={styles.discussionItem}>
+                    <View style={styles.discussionHeader}>
+                      <View style={styles.discussionAvatar}>
+                        <Text style={styles.discussionAvatarText}>DR</Text>
+                      </View>
+                      <View style={styles.discussionInfo}>
+                        <Text style={styles.discussionAuthor}>Dr. Sarah Johnson</Text>
+                        <Text style={styles.discussionTime}>2 hours ago</Text>
+                      </View>
+                      <View style={styles.discussionBadge}>
+                        <Text style={styles.discussionBadgeText}>Popular</Text>
+                      </View>
+                    </View>
+                    <Text style={styles.discussionTitle}>Hypertension Management 2024</Text>
+                    <Text style={styles.discussionPreview}>Updated guidelines for blood pressure management in primary care settings</Text>
+                    <View style={styles.discussionStats}>
+                      <Text style={styles.discussionStat}>💬 18 replies</Text>
+                      <Text style={styles.discussionStat}>👍 15 likes</Text>
+                      <Text style={styles.discussionStat}>👁️ 89 views</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.discussionItem}>
+                    <View style={styles.discussionHeader}>
+                      <View style={styles.discussionAvatar}>
+                        <Text style={styles.discussionAvatarText}>MR</Text>
+                      </View>
+                      <View style={styles.discussionInfo}>
+                        <Text style={styles.discussionAuthor}>Dr. Michael Rodriguez</Text>
+                        <Text style={styles.discussionTime}>4 hours ago</Text>
+                      </View>
+                    </View>
+                    <Text style={styles.discussionTitle}>Diabetes Screening Protocol</Text>
+                    <Text style={styles.discussionPreview}>Best practices for diabetes screening in asymptomatic adults - HbA1c vs FPG</Text>
+                    <View style={styles.discussionStats}>
+                      <Text style={styles.discussionStat}>💬 11 replies</Text>
+                      <Text style={styles.discussionStat}>👍 8 likes</Text>
+                      <Text style={styles.discussionStat}>👁️ 45 views</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.discussionItem}>
+                    <View style={styles.discussionHeader}>
+                      <View style={styles.discussionAvatar}>
+                        <Text style={styles.discussionAvatarText}>AL</Text>
+                      </View>
+                      <View style={styles.discussionInfo}>
+                        <Text style={styles.discussionAuthor}>Dr. Alice Lee</Text>
+                        <Text style={styles.discussionTime}>6 hours ago</Text>
+                      </View>
+                    </View>
+                    <Text style={styles.discussionTitle}>Mental Health Screening Tools</Text>
+                    <Text style={styles.discussionPreview}>PHQ-9, GAD-7, and other validated screening tools for primary care</Text>
+                    <View style={styles.discussionStats}>
+                      <Text style={styles.discussionStat}>💬 13 replies</Text>
+                      <Text style={styles.discussionStat}>👍 10 likes</Text>
+                      <Text style={styles.discussionStat}>👁️ 67 views</Text>
+                    </View>
+                  </View>
+                </View>
+
+                <TouchableOpacity style={styles.primaryButton}>
+                  <Text style={styles.primaryButtonText}>Start Discussion</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         )}
       </ScrollView>
@@ -882,6 +1352,293 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#007AFF',
+  },
+  channelHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  channelHeaderIcon: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#F8F9FA',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+  },
+  channelHeaderEmoji: {
+    fontSize: 28,
+  },
+  channelHeaderInfo: {
+    flex: 1,
+  },
+  channelHeaderTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1A1A1A',
+    marginBottom: 4,
+  },
+  channelHeaderSubtitle: {
+    fontSize: 14,
+    color: '#6C757D',
+    marginBottom: 4,
+  },
+  channelHeaderStats: {
+    fontSize: 12,
+    color: '#9E9E9E',
+  },
+  channelTabs: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  channelTab: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: '#007AFF',
+    alignItems: 'center',
+  },
+  channelTabText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  channelContent: {
+    marginBottom: 20,
+  },
+  discussionItem: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  discussionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  discussionAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#007AFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  discussionAvatarText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  discussionInfo: {
+    flex: 1,
+  },
+  discussionAuthor: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    marginBottom: 2,
+  },
+  discussionTime: {
+    fontSize: 12,
+    color: '#9E9E9E',
+  },
+  discussionBadge: {
+    backgroundColor: '#FF3B30',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  discussionBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  discussionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    marginBottom: 8,
+    lineHeight: 22,
+  },
+  discussionPreview: {
+    fontSize: 14,
+    color: '#6C757D',
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  discussionStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  discussionStat: {
+    fontSize: 12,
+    color: '#9E9E9E',
+  },
+  emergencyAlert: {
+    backgroundColor: '#FFF3CD',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: '#FFC107',
+  },
+  alertHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  alertIcon: {
+    fontSize: 20,
+    marginRight: 8,
+  },
+  alertTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#856404',
+    flex: 1,
+  },
+  alertTime: {
+    fontSize: 12,
+    color: '#856404',
+  },
+  alertMessage: {
+    fontSize: 14,
+    color: '#856404',
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  alertActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  alertButton: {
+    backgroundColor: '#FFC107',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    flex: 1,
+    marginRight: 8,
+    alignItems: 'center',
+  },
+  alertButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  alertButtonSecondary: {
+    backgroundColor: 'transparent',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#FFC107',
+    alignItems: 'center',
+  },
+  alertButtonSecondaryText: {
+    color: '#FFC107',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  studyItem: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  studyHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  studyAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#34C759',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  studyAvatarText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  studyInfo: {
+    flex: 1,
+  },
+  studyAuthor: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    marginBottom: 2,
+  },
+  studyTime: {
+    fontSize: 12,
+    color: '#9E9E9E',
+  },
+  studyBadge: {
+    backgroundColor: '#34C759',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  studyBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  studyTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    marginBottom: 8,
+    lineHeight: 22,
+  },
+  studyPreview: {
+    fontSize: 14,
+    color: '#6C757D',
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  studyStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  studyStat: {
+    fontSize: 12,
+    color: '#9E9E9E',
   },
 });
 
