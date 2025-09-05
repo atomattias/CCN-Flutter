@@ -9,6 +9,14 @@ const CCNMobileApp: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentScreen, setCurrentScreen] = useState('home');
   const [selectedChannel, setSelectedChannel] = useState(null);
+  const [showDiscussionForm, setShowDiscussionForm] = useState(false);
+  const [discussionData, setDiscussionData] = useState({
+    title: '',
+    content: '',
+    urgency: 'normal',
+    category: '',
+    attachments: []
+  });
 
   const handleLogin = () => {
     if (email === 'admin@test.com' && password === 'admin123456') {
@@ -22,8 +30,50 @@ const CCNMobileApp: React.FC = () => {
     setIsLoggedIn(false);
     setCurrentScreen('home');
     setSelectedChannel(null);
+    setShowDiscussionForm(false);
+    setDiscussionData({
+      title: '',
+      content: '',
+      urgency: 'normal',
+      category: '',
+      attachments: []
+    });
     setEmail('');
     setPassword('');
+  };
+
+  const handleStartDiscussion = () => {
+    setShowDiscussionForm(true);
+  };
+
+  const handleSubmitDiscussion = () => {
+    // Here you would typically send the data to your backend
+    Alert.alert('Success', 'Discussion posted successfully!');
+    setShowDiscussionForm(false);
+    setDiscussionData({
+      title: '',
+      content: '',
+      urgency: 'normal',
+      category: '',
+      attachments: []
+    });
+  };
+
+  const getChannelCategories = (channel) => {
+    switch (channel) {
+      case 'cardiology':
+        return ['MI Management', 'Heart Failure', 'Arrhythmias', 'Echocardiography', 'Interventional', 'General'];
+      case 'emergency':
+        return ['Trauma', 'Chest Pain', 'Sepsis', 'Stroke', 'Pediatric Emergency', 'Toxicology'];
+      case 'radiology':
+        return ['Chest X-Ray', 'CT Scan', 'MRI', 'Ultrasound', 'Nuclear Medicine', 'Interventional'];
+      case 'pediatrics':
+        return ['Neonatology', 'Infectious Disease', 'Cardiology', 'Neurology', 'Endocrinology', 'General'];
+      case 'general':
+        return ['Hypertension', 'Diabetes', 'Mental Health', 'Preventive Care', 'Chronic Disease', 'General'];
+      default:
+        return ['General'];
+    }
   };
 
   if (!isLoggedIn) {
@@ -539,7 +589,7 @@ const CCNMobileApp: React.FC = () => {
                   </View>
                 </View>
 
-                <TouchableOpacity style={styles.primaryButton}>
+                <TouchableOpacity style={styles.primaryButton} onPress={handleStartDiscussion}>
                   <Text style={styles.primaryButtonText}>Start New Discussion</Text>
                 </TouchableOpacity>
               </View>
@@ -630,7 +680,7 @@ const CCNMobileApp: React.FC = () => {
                   </View>
                 </View>
 
-                <TouchableOpacity style={styles.primaryButton}>
+                <TouchableOpacity style={styles.primaryButton} onPress={handleStartDiscussion}>
                   <Text style={styles.primaryButtonText}>Report Emergency Case</Text>
                 </TouchableOpacity>
               </View>
@@ -720,7 +770,7 @@ const CCNMobileApp: React.FC = () => {
                   </View>
                 </View>
 
-                <TouchableOpacity style={styles.primaryButton}>
+                <TouchableOpacity style={styles.primaryButton} onPress={handleStartDiscussion}>
                   <Text style={styles.primaryButtonText}>Upload New Study</Text>
                 </TouchableOpacity>
               </View>
@@ -813,7 +863,7 @@ const CCNMobileApp: React.FC = () => {
                   </View>
                 </View>
 
-                <TouchableOpacity style={styles.primaryButton}>
+                <TouchableOpacity style={styles.primaryButton} onPress={handleStartDiscussion}>
                   <Text style={styles.primaryButtonText}>Post Pediatric Case</Text>
                 </TouchableOpacity>
               </View>
@@ -906,11 +956,190 @@ const CCNMobileApp: React.FC = () => {
                   </View>
                 </View>
 
-                <TouchableOpacity style={styles.primaryButton}>
+                <TouchableOpacity style={styles.primaryButton} onPress={handleStartDiscussion}>
                   <Text style={styles.primaryButtonText}>Start Discussion</Text>
                 </TouchableOpacity>
               </View>
             )}
+          </View>
+        )}
+
+        {showDiscussionForm && (
+          <View>
+            <TouchableOpacity style={styles.backButton} onPress={() => setShowDiscussionForm(false)}>
+              <Text style={styles.backText}>← Back to Channel</Text>
+            </TouchableOpacity>
+            
+            <View style={styles.headerSection}>
+              <Text style={styles.sectionTitle}>
+                {selectedChannel === 'cardiology' && 'Start Cardiology Discussion'}
+                {selectedChannel === 'emergency' && 'Report Emergency Case'}
+                {selectedChannel === 'radiology' && 'Upload New Study'}
+                {selectedChannel === 'pediatrics' && 'Post Pediatric Case'}
+                {selectedChannel === 'general' && 'Start Discussion'}
+              </Text>
+              <Text style={styles.sectionSubtitle}>
+                Share your clinical case with the community
+              </Text>
+            </View>
+
+            <View style={styles.discussionForm}>
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>Discussion Title *</Text>
+                <TextInput
+                  style={styles.formInput}
+                  placeholder="Enter a descriptive title for your discussion"
+                  value={discussionData.title}
+                  onChangeText={(text) => setDiscussionData({...discussionData, title: text})}
+                  multiline
+                />
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>Category *</Text>
+                <View style={styles.categoryGrid}>
+                  {getChannelCategories(selectedChannel).map((category, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={[
+                        styles.categoryChip,
+                        discussionData.category === category && styles.categoryChipSelected
+                      ]}
+                      onPress={() => setDiscussionData({...discussionData, category})}
+                    >
+                      <Text style={[
+                        styles.categoryChipText,
+                        discussionData.category === category && styles.categoryChipTextSelected
+                      ]}>
+                        {category}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>Urgency Level *</Text>
+                <View style={styles.urgencyGrid}>
+                  <TouchableOpacity
+                    style={[
+                      styles.urgencyButton,
+                      discussionData.urgency === 'low' && styles.urgencyButtonSelected
+                    ]}
+                    onPress={() => setDiscussionData({...discussionData, urgency: 'low'})}
+                  >
+                    <Text style={styles.urgencyIcon}>🟢</Text>
+                    <Text style={[
+                      styles.urgencyText,
+                      discussionData.urgency === 'low' && styles.urgencyTextSelected
+                    ]}>Low</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.urgencyButton,
+                      discussionData.urgency === 'normal' && styles.urgencyButtonSelected
+                    ]}
+                    onPress={() => setDiscussionData({...discussionData, urgency: 'normal'})}
+                  >
+                    <Text style={styles.urgencyIcon}>🟡</Text>
+                    <Text style={[
+                      styles.urgencyText,
+                      discussionData.urgency === 'normal' && styles.urgencyTextSelected
+                    ]}>Normal</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.urgencyButton,
+                      discussionData.urgency === 'high' && styles.urgencyButtonSelected
+                    ]}
+                    onPress={() => setDiscussionData({...discussionData, urgency: 'high'})}
+                  >
+                    <Text style={styles.urgencyIcon}>🟠</Text>
+                    <Text style={[
+                      styles.urgencyText,
+                      discussionData.urgency === 'high' && styles.urgencyTextSelected
+                    ]}>High</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.urgencyButton,
+                      discussionData.urgency === 'urgent' && styles.urgencyButtonSelected
+                    ]}
+                    onPress={() => setDiscussionData({...discussionData, urgency: 'urgent'})}
+                  >
+                    <Text style={styles.urgencyIcon}>🔴</Text>
+                    <Text style={[
+                      styles.urgencyText,
+                      discussionData.urgency === 'urgent' && styles.urgencyTextSelected
+                    ]}>Urgent</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>Case Details *</Text>
+                <TextInput
+                  style={[styles.formInput, styles.textArea]}
+                  placeholder="Describe the patient case, symptoms, findings, and your specific question..."
+                  value={discussionData.content}
+                  onChangeText={(text) => setDiscussionData({...discussionData, content: text})}
+                  multiline
+                  numberOfLines={8}
+                  textAlignVertical="top"
+                />
+              </View>
+
+              {selectedChannel === 'radiology' && (
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Medical Images</Text>
+                  <TouchableOpacity style={styles.uploadButton}>
+                    <Text style={styles.uploadIcon}>📷</Text>
+                    <Text style={styles.uploadText}>Upload Images</Text>
+                    <Text style={styles.uploadSubtext}>X-Ray, CT, MRI, Ultrasound</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>Additional Information</Text>
+                <View style={styles.additionalInfoGrid}>
+                  <TouchableOpacity style={styles.infoButton}>
+                    <Text style={styles.infoIcon}>📊</Text>
+                    <Text style={styles.infoText}>Lab Results</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.infoButton}>
+                    <Text style={styles.infoIcon}>💊</Text>
+                    <Text style={styles.infoText}>Medications</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.infoButton}>
+                    <Text style={styles.infoIcon}>📋</Text>
+                    <Text style={styles.infoText}>Vital Signs</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.infoButton}>
+                    <Text style={styles.infoIcon}>🏥</Text>
+                    <Text style={styles.infoText}>History</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <View style={styles.formActions}>
+                <TouchableOpacity 
+                  style={styles.cancelButton}
+                  onPress={() => setShowDiscussionForm(false)}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.submitButton}
+                  onPress={handleSubmitDiscussion}
+                >
+                  <Text style={styles.submitButtonText}>Post Discussion</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
         )}
       </ScrollView>
@@ -1639,6 +1868,176 @@ const styles = StyleSheet.create({
   studyStat: {
     fontSize: 12,
     color: '#9E9E9E',
+  },
+  discussionForm: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  formGroup: {
+    marginBottom: 20,
+  },
+  formLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    marginBottom: 8,
+  },
+  formInput: {
+    borderWidth: 1,
+    borderColor: '#E1E5E9',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    color: '#1A1A1A',
+    backgroundColor: '#FFFFFF',
+  },
+  textArea: {
+    height: 120,
+    textAlignVertical: 'top',
+  },
+  categoryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  categoryChip: {
+    backgroundColor: '#F8F9FA',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: '#E1E5E9',
+  },
+  categoryChipSelected: {
+    backgroundColor: '#007AFF',
+    borderColor: '#007AFF',
+  },
+  categoryChipText: {
+    fontSize: 14,
+    color: '#6C757D',
+    fontWeight: '500',
+  },
+  categoryChipTextSelected: {
+    color: '#FFFFFF',
+  },
+  urgencyGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  urgencyButton: {
+    flex: 1,
+    alignItems: 'center',
+    padding: 12,
+    marginHorizontal: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E1E5E9',
+    backgroundColor: '#FFFFFF',
+  },
+  urgencyButtonSelected: {
+    backgroundColor: '#E3F2FD',
+    borderColor: '#007AFF',
+  },
+  urgencyIcon: {
+    fontSize: 20,
+    marginBottom: 4,
+  },
+  urgencyText: {
+    fontSize: 12,
+    color: '#6C757D',
+    fontWeight: '500',
+  },
+  urgencyTextSelected: {
+    color: '#007AFF',
+    fontWeight: '600',
+  },
+  uploadButton: {
+    borderWidth: 2,
+    borderColor: '#007AFF',
+    borderStyle: 'dashed',
+    borderRadius: 12,
+    padding: 20,
+    alignItems: 'center',
+    backgroundColor: '#F8F9FF',
+  },
+  uploadIcon: {
+    fontSize: 32,
+    marginBottom: 8,
+  },
+  uploadText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#007AFF',
+    marginBottom: 4,
+  },
+  uploadSubtext: {
+    fontSize: 12,
+    color: '#6C757D',
+  },
+  additionalInfoGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  infoButton: {
+    flex: 1,
+    minWidth: '45%',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E1E5E9',
+    backgroundColor: '#FFFFFF',
+  },
+  infoIcon: {
+    fontSize: 24,
+    marginBottom: 8,
+  },
+  infoText: {
+    fontSize: 12,
+    color: '#6C757D',
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  formActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
+  },
+  cancelButton: {
+    flex: 1,
+    padding: 16,
+    marginRight: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E1E5E9',
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    color: '#6C757D',
+    fontWeight: '600',
+  },
+  submitButton: {
+    flex: 1,
+    padding: 16,
+    marginLeft: 8,
+    borderRadius: 8,
+    backgroundColor: '#007AFF',
+    alignItems: 'center',
+  },
+  submitButtonText: {
+    fontSize: 16,
+    color: '#FFFFFF',
+    fontWeight: '600',
   },
 });
 
