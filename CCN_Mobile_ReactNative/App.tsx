@@ -10,12 +10,31 @@ const CCNMobileApp: React.FC = () => {
   const [currentScreen, setCurrentScreen] = useState('home');
   const [selectedChannel, setSelectedChannel] = useState(null);
   const [showDiscussionForm, setShowDiscussionForm] = useState(false);
+  const [showClinicalForm, setShowClinicalForm] = useState(false);
   const [discussionData, setDiscussionData] = useState({
     title: '',
     content: '',
     urgency: 'normal',
     category: '',
     attachments: []
+  });
+  const [clinicalData, setClinicalData] = useState({
+    title: '',
+    question: '',
+    specialty: 'general',
+    urgency: 'medium',
+    patientAge: '',
+    patientGender: '',
+    symptoms: [],
+    labValues: '',
+    vitalSigns: '',
+    medications: '',
+    allergies: '',
+    familyHistory: '',
+    socialHistory: '',
+    physicalExam: '',
+    clinicalImages: [],
+    comorbidities: []
   });
 
   const handleLogin = () => {
@@ -31,6 +50,7 @@ const CCNMobileApp: React.FC = () => {
     setCurrentScreen('home');
     setSelectedChannel(null);
     setShowDiscussionForm(false);
+    setShowClinicalForm(false);
     setDiscussionData({
       title: '',
       content: '',
@@ -38,12 +58,34 @@ const CCNMobileApp: React.FC = () => {
       category: '',
       attachments: []
     });
+    setClinicalData({
+      title: '',
+      question: '',
+      specialty: 'general',
+      urgency: 'medium',
+      patientAge: '',
+      patientGender: '',
+      symptoms: [],
+      labValues: '',
+      vitalSigns: '',
+      medications: '',
+      allergies: '',
+      familyHistory: '',
+      socialHistory: '',
+      physicalExam: '',
+      clinicalImages: [],
+      comorbidities: []
+    });
     setEmail('');
     setPassword('');
   };
 
   const handleStartDiscussion = () => {
     setShowDiscussionForm(true);
+  };
+
+  const handleStartClinicalQuestion = () => {
+    setShowClinicalForm(true);
   };
 
   const handleSubmitDiscussion = () => {
@@ -56,6 +98,30 @@ const CCNMobileApp: React.FC = () => {
       urgency: 'normal',
       category: '',
       attachments: []
+    });
+  };
+
+  const handleSubmitClinicalQuestion = () => {
+    // Here you would typically send the data to your backend for AI analysis
+    Alert.alert('Success', 'Clinical question submitted! AI analysis will be available shortly.');
+    setShowClinicalForm(false);
+    setClinicalData({
+      title: '',
+      question: '',
+      specialty: 'general',
+      urgency: 'medium',
+      patientAge: '',
+      patientGender: '',
+      symptoms: [],
+      labValues: '',
+      vitalSigns: '',
+      medications: '',
+      allergies: '',
+      familyHistory: '',
+      socialHistory: '',
+      physicalExam: '',
+      clinicalImages: [],
+      comorbidities: []
     });
   };
 
@@ -74,6 +140,18 @@ const CCNMobileApp: React.FC = () => {
       default:
         return ['General'];
     }
+  };
+
+  const getClinicalSpecialties = () => {
+    return ['General Medicine', 'Cardiology', 'Emergency Medicine', 'Radiology', 'Pediatrics', 'Neurology', 'Oncology', 'Surgery'];
+  };
+
+  const getCommonSymptoms = () => {
+    return ['Fever', 'Chest Pain', 'Shortness of Breath', 'Headache', 'Nausea', 'Vomiting', 'Diarrhea', 'Fatigue', 'Dizziness', 'Cough', 'Abdominal Pain', 'Back Pain'];
+  };
+
+  const getCommonComorbidities = () => {
+    return ['Hypertension', 'Diabetes', 'Heart Disease', 'COPD', 'Asthma', 'Obesity', 'Depression', 'Anxiety', 'Arthritis', 'Cancer'];
   };
 
   if (!isLoggedIn) {
@@ -228,7 +306,7 @@ const CCNMobileApp: React.FC = () => {
               </View>
             </View>
 
-            <TouchableOpacity style={styles.primaryButton}>
+            <TouchableOpacity style={styles.primaryButton} onPress={handleStartClinicalQuestion}>
               <Text style={styles.primaryButtonText}>Start New Question</Text>
             </TouchableOpacity>
           </View>
@@ -1142,6 +1220,370 @@ const CCNMobileApp: React.FC = () => {
             </View>
           </View>
         )}
+
+        {showClinicalForm && (
+          <View>
+            <TouchableOpacity style={styles.backButton} onPress={() => setShowClinicalForm(false)}>
+              <Text style={styles.backText}>← Back to Clinical Q&A</Text>
+            </TouchableOpacity>
+            
+            <View style={styles.headerSection}>
+              <Text style={styles.sectionTitle}>Clinical Question & AI Analysis</Text>
+              <Text style={styles.sectionSubtitle}>
+                Submit your clinical case for AI-powered analysis and peer review
+              </Text>
+            </View>
+
+            <View style={styles.clinicalForm}>
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>Question Title *</Text>
+                <TextInput
+                  style={styles.formInput}
+                  placeholder="Brief description of your clinical question"
+                  value={clinicalData.title}
+                  onChangeText={(text) => setClinicalData({...clinicalData, title: text})}
+                  multiline
+                />
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>Medical Specialty *</Text>
+                <View style={styles.specialtyGrid}>
+                  {getClinicalSpecialties().map((specialty, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={[
+                        styles.specialtyChip,
+                        clinicalData.specialty === specialty.toLowerCase().replace(' ', '') && styles.specialtyChipSelected
+                      ]}
+                      onPress={() => setClinicalData({...clinicalData, specialty: specialty.toLowerCase().replace(' ', '')})}
+                    >
+                      <Text style={[
+                        styles.specialtyChipText,
+                        clinicalData.specialty === specialty.toLowerCase().replace(' ', '') && styles.specialtyChipTextSelected
+                      ]}>
+                        {specialty}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>Urgency Level *</Text>
+                <View style={styles.urgencyGrid}>
+                  <TouchableOpacity
+                    style={[
+                      styles.urgencyButton,
+                      clinicalData.urgency === 'low' && styles.urgencyButtonSelected
+                    ]}
+                    onPress={() => setClinicalData({...clinicalData, urgency: 'low'})}
+                  >
+                    <Text style={styles.urgencyIcon}>🟢</Text>
+                    <Text style={[
+                      styles.urgencyText,
+                      clinicalData.urgency === 'low' && styles.urgencyTextSelected
+                    ]}>Low</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.urgencyButton,
+                      clinicalData.urgency === 'medium' && styles.urgencyButtonSelected
+                    ]}
+                    onPress={() => setClinicalData({...clinicalData, urgency: 'medium'})}
+                  >
+                    <Text style={styles.urgencyIcon}>🟡</Text>
+                    <Text style={[
+                      styles.urgencyText,
+                      clinicalData.urgency === 'medium' && styles.urgencyTextSelected
+                    ]}>Medium</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.urgencyButton,
+                      clinicalData.urgency === 'high' && styles.urgencyButtonSelected
+                    ]}
+                    onPress={() => setClinicalData({...clinicalData, urgency: 'high'})}
+                  >
+                    <Text style={styles.urgencyIcon}>🟠</Text>
+                    <Text style={[
+                      styles.urgencyText,
+                      clinicalData.urgency === 'high' && styles.urgencyTextSelected
+                    ]}>High</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.urgencyButton,
+                      clinicalData.urgency === 'urgent' && styles.urgencyButtonSelected
+                    ]}
+                    onPress={() => setClinicalData({...clinicalData, urgency: 'urgent'})}
+                  >
+                    <Text style={styles.urgencyIcon}>🔴</Text>
+                    <Text style={[
+                      styles.urgencyText,
+                      clinicalData.urgency === 'urgent' && styles.urgencyTextSelected
+                    ]}>Urgent</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <View style={styles.patientInfoSection}>
+                <Text style={styles.sectionTitle}>Patient Information</Text>
+                
+                <View style={styles.patientInfoGrid}>
+                  <View style={styles.formGroup}>
+                    <Text style={styles.formLabel}>Age</Text>
+                    <TextInput
+                      style={styles.formInput}
+                      placeholder="e.g., 45 years"
+                      value={clinicalData.patientAge}
+                      onChangeText={(text) => setClinicalData({...clinicalData, patientAge: text})}
+                    />
+                  </View>
+
+                  <View style={styles.formGroup}>
+                    <Text style={styles.formLabel}>Gender</Text>
+                    <View style={styles.genderGrid}>
+                      <TouchableOpacity
+                        style={[
+                          styles.genderButton,
+                          clinicalData.patientGender === 'male' && styles.genderButtonSelected
+                        ]}
+                        onPress={() => setClinicalData({...clinicalData, patientGender: 'male'})}
+                      >
+                        <Text style={[
+                          styles.genderText,
+                          clinicalData.patientGender === 'male' && styles.genderTextSelected
+                        ]}>Male</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[
+                          styles.genderButton,
+                          clinicalData.patientGender === 'female' && styles.genderButtonSelected
+                        ]}
+                        onPress={() => setClinicalData({...clinicalData, patientGender: 'female'})}
+                      >
+                        <Text style={[
+                          styles.genderText,
+                          clinicalData.patientGender === 'female' && styles.genderTextSelected
+                        ]}>Female</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[
+                          styles.genderButton,
+                          clinicalData.patientGender === 'other' && styles.genderButtonSelected
+                        ]}
+                        onPress={() => setClinicalData({...clinicalData, patientGender: 'other'})}
+                      >
+                        <Text style={[
+                          styles.genderText,
+                          clinicalData.patientGender === 'other' && styles.genderTextSelected
+                        ]}>Other</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>Presenting Symptoms *</Text>
+                <View style={styles.symptomsGrid}>
+                  {getCommonSymptoms().map((symptom, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={[
+                        styles.symptomChip,
+                        clinicalData.symptoms.includes(symptom) && styles.symptomChipSelected
+                      ]}
+                      onPress={() => {
+                        const newSymptoms = clinicalData.symptoms.includes(symptom)
+                          ? clinicalData.symptoms.filter(s => s !== symptom)
+                          : [...clinicalData.symptoms, symptom];
+                        setClinicalData({...clinicalData, symptoms: newSymptoms});
+                      }}
+                    >
+                      <Text style={[
+                        styles.symptomChipText,
+                        clinicalData.symptoms.includes(symptom) && styles.symptomChipTextSelected
+                      ]}>
+                        {symptom}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>Clinical Question *</Text>
+                <TextInput
+                  style={[styles.formInput, styles.textArea]}
+                  placeholder="Describe your specific clinical question, differential diagnosis concerns, or treatment considerations..."
+                  value={clinicalData.question}
+                  onChangeText={(text) => setClinicalData({...clinicalData, question: text})}
+                  multiline
+                  numberOfLines={6}
+                  textAlignVertical="top"
+                />
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>Medical Images</Text>
+                <TouchableOpacity style={styles.uploadButton}>
+                  <Text style={styles.uploadIcon}>📷</Text>
+                  <Text style={styles.uploadText}>Upload Medical Images</Text>
+                  <Text style={styles.uploadSubtext}>X-Ray, CT, MRI, Ultrasound, Lab Results</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.clinicalDataSection}>
+                <Text style={styles.sectionTitle}>Additional Clinical Data</Text>
+                
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Lab Values</Text>
+                  <TextInput
+                    style={[styles.formInput, styles.textArea]}
+                    placeholder="Enter relevant laboratory results (e.g., CBC, CMP, troponins, etc.)"
+                    value={clinicalData.labValues}
+                    onChangeText={(text) => setClinicalData({...clinicalData, labValues: text})}
+                    multiline
+                    numberOfLines={3}
+                    textAlignVertical="top"
+                  />
+                </View>
+
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Vital Signs</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="e.g., BP 140/90, HR 85, Temp 98.6°F, RR 16, O2 Sat 98%"
+                    value={clinicalData.vitalSigns}
+                    onChangeText={(text) => setClinicalData({...clinicalData, vitalSigns: text})}
+                  />
+                </View>
+
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Current Medications</Text>
+                  <TextInput
+                    style={[styles.formInput, styles.textArea]}
+                    placeholder="List current medications and dosages"
+                    value={clinicalData.medications}
+                    onChangeText={(text) => setClinicalData({...clinicalData, medications: text})}
+                    multiline
+                    numberOfLines={3}
+                    textAlignVertical="top"
+                  />
+                </View>
+
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Allergies</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="Known allergies and reactions"
+                    value={clinicalData.allergies}
+                    onChangeText={(text) => setClinicalData({...clinicalData, allergies: text})}
+                  />
+                </View>
+
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Family History</Text>
+                  <TextInput
+                    style={[styles.formInput, styles.textArea]}
+                    placeholder="Relevant family medical history"
+                    value={clinicalData.familyHistory}
+                    onChangeText={(text) => setClinicalData({...clinicalData, familyHistory: text})}
+                    multiline
+                    numberOfLines={3}
+                    textAlignVertical="top"
+                  />
+                </View>
+
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Social History</Text>
+                  <TextInput
+                    style={[styles.formInput, styles.textArea]}
+                    placeholder="Smoking, alcohol, occupation, travel history, etc."
+                    value={clinicalData.socialHistory}
+                    onChangeText={(text) => setClinicalData({...clinicalData, socialHistory: text})}
+                    multiline
+                    numberOfLines={3}
+                    textAlignVertical="top"
+                  />
+                </View>
+
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Physical Examination</Text>
+                  <TextInput
+                    style={[styles.formInput, styles.textArea]}
+                    placeholder="Key physical examination findings"
+                    value={clinicalData.physicalExam}
+                    onChangeText={(text) => setClinicalData({...clinicalData, physicalExam: text})}
+                    multiline
+                    numberOfLines={4}
+                    textAlignVertical="top"
+                  />
+                </View>
+
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Comorbidities</Text>
+                  <View style={styles.comorbiditiesGrid}>
+                    {getCommonComorbidities().map((comorbidity, index) => (
+                      <TouchableOpacity
+                        key={index}
+                        style={[
+                          styles.comorbidityChip,
+                          clinicalData.comorbidities.includes(comorbidity) && styles.comorbidityChipSelected
+                        ]}
+                        onPress={() => {
+                          const newComorbidities = clinicalData.comorbidities.includes(comorbidity)
+                            ? clinicalData.comorbidities.filter(c => c !== comorbidity)
+                            : [...clinicalData.comorbidities, comorbidity];
+                          setClinicalData({...clinicalData, comorbidities: newComorbidities});
+                        }}
+                      >
+                        <Text style={[
+                          styles.comorbidityChipText,
+                          clinicalData.comorbidities.includes(comorbidity) && styles.comorbidityChipTextSelected
+                        ]}>
+                          {comorbidity}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              </View>
+
+              <View style={styles.aiAnalysisSection}>
+                <View style={styles.aiInfoCard}>
+                  <Text style={styles.aiInfoTitle}>🤖 AI Analysis Features</Text>
+                  <Text style={styles.aiInfoText}>Your question will be analyzed by our AI system to provide:</Text>
+                  <Text style={styles.aiInfoItem}>• Differential diagnosis suggestions</Text>
+                  <Text style={styles.aiInfoItem}>• Treatment recommendations</Text>
+                  <Text style={styles.aiInfoItem}>• Risk stratification</Text>
+                  <Text style={styles.aiInfoItem}>• Evidence-based guidelines</Text>
+                  <Text style={styles.aiInfoItem}>• Peer review and expert opinions</Text>
+                </View>
+              </View>
+
+              <View style={styles.formActions}>
+                <TouchableOpacity 
+                  style={styles.cancelButton}
+                  onPress={() => setShowClinicalForm(false)}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.submitButton}
+                  onPress={handleSubmitClinicalQuestion}
+                >
+                  <Text style={styles.submitButtonText}>Submit for AI Analysis</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -2038,6 +2480,160 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#FFFFFF',
     fontWeight: '600',
+  },
+  clinicalForm: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  specialtyGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  specialtyChip: {
+    backgroundColor: '#F8F9FA',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: '#E1E5E9',
+  },
+  specialtyChipSelected: {
+    backgroundColor: '#34C759',
+    borderColor: '#34C759',
+  },
+  specialtyChipText: {
+    fontSize: 14,
+    color: '#6C757D',
+    fontWeight: '500',
+  },
+  specialtyChipTextSelected: {
+    color: '#FFFFFF',
+  },
+  patientInfoSection: {
+    backgroundColor: '#F8F9FF',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+  },
+  patientInfoGrid: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  genderGrid: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  genderButton: {
+    flex: 1,
+    padding: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#E1E5E9',
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+  },
+  genderButtonSelected: {
+    backgroundColor: '#007AFF',
+    borderColor: '#007AFF',
+  },
+  genderText: {
+    fontSize: 12,
+    color: '#6C757D',
+    fontWeight: '500',
+  },
+  genderTextSelected: {
+    color: '#FFFFFF',
+  },
+  symptomsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  symptomChip: {
+    backgroundColor: '#F8F9FA',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: '#E1E5E9',
+  },
+  symptomChipSelected: {
+    backgroundColor: '#FF9500',
+    borderColor: '#FF9500',
+  },
+  symptomChipText: {
+    fontSize: 12,
+    color: '#6C757D',
+    fontWeight: '500',
+  },
+  symptomChipTextSelected: {
+    color: '#FFFFFF',
+  },
+  clinicalDataSection: {
+    backgroundColor: '#F0F8FF',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+  },
+  comorbiditiesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  comorbidityChip: {
+    backgroundColor: '#F8F9FA',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: '#E1E5E9',
+  },
+  comorbidityChipSelected: {
+    backgroundColor: '#8E44AD',
+    borderColor: '#8E44AD',
+  },
+  comorbidityChipText: {
+    fontSize: 12,
+    color: '#6C757D',
+    fontWeight: '500',
+  },
+  comorbidityChipTextSelected: {
+    color: '#FFFFFF',
+  },
+  aiAnalysisSection: {
+    marginBottom: 20,
+  },
+  aiInfoCard: {
+    backgroundColor: '#E8F5E8',
+    borderRadius: 12,
+    padding: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: '#34C759',
+  },
+  aiInfoTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#2D5016',
+    marginBottom: 8,
+  },
+  aiInfoText: {
+    fontSize: 14,
+    color: '#2D5016',
+    marginBottom: 8,
+  },
+  aiInfoItem: {
+    fontSize: 14,
+    color: '#2D5016',
+    marginBottom: 4,
+    marginLeft: 8,
   },
 });
 
