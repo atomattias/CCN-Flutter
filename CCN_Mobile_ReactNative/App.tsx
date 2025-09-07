@@ -426,51 +426,61 @@ const CCNMobileApp: React.FC = () => {
 
   if (!isLoggedIn) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.title}>CCN Mobile App</Text>
-        <Text style={styles.subtitle}>Clinical Communication Network</Text>
+      <ScrollView style={styles.loginContainer} contentContainerStyle={styles.loginContent}>
+        <View style={styles.loginHeader}>
+          <Text style={styles.title}>CCN Mobile App</Text>
+          <Text style={styles.subtitle}>Clinical Communication Network</Text>
+        </View>
         
-        <View style={styles.form}>
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-          
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
+        <View style={styles.loginForm}>
+          <View style={styles.inputGroup}>
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoComplete="email"
+            />
+            
+            <TextInput
+              style={styles.input}
+              placeholder="Password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              autoComplete="password"
+            />
+          </View>
           
           <TouchableOpacity style={styles.button} onPress={handleLogin}>
             <Text style={styles.buttonText}>Login</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity 
-            style={styles.registerLink} 
-            onPress={() => setShowRegistration(true)}
-          >
-            <Text style={styles.registerLinkText}>New to CCN? Create Account</Text>
-          </TouchableOpacity>
+          <View style={styles.loginLinks}>
+            <TouchableOpacity 
+              style={styles.registerLink} 
+              onPress={() => setShowRegistration(true)}
+            >
+              <Text style={styles.registerLinkText}>New to CCN? Create Account</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.forgotPasswordLink} 
+              onPress={() => setShowForgotPassword(true)}
+            >
+              <Text style={styles.forgotPasswordLinkText}>Forgot Password?</Text>
+            </TouchableOpacity>
+          </View>
           
-          <TouchableOpacity 
-            style={styles.forgotPasswordLink} 
-            onPress={() => setShowForgotPassword(true)}
-          >
-            <Text style={styles.forgotPasswordLinkText}>Forgot Password?</Text>
-          </TouchableOpacity>
-          
-          <Text style={styles.demoText}>
-            Demo: admin@test.com / admin123456
-          </Text>
+          <View style={styles.demoSection}>
+            <Text style={styles.demoText}>
+              Demo: admin@test.com / admin123456
+            </Text>
+          </View>
         </View>
-      </View>
+      </ScrollView>
     );
   }
 
@@ -2568,6 +2578,41 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8F9FA',
   },
+  // Login Screen Styles
+  loginContainer: {
+    flex: 1,
+    backgroundColor: '#F5F5F5',
+  },
+  loginContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 40,
+    minHeight: '100%',
+  },
+  loginHeader: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  loginForm: {
+    width: '100%',
+    maxWidth: 400,
+    alignSelf: 'center',
+  },
+  inputGroup: {
+    marginBottom: 20,
+  },
+  loginLinks: {
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  demoSection: {
+    alignItems: 'center',
+    marginTop: 30,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#E1E5E9',
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -2595,14 +2640,14 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#007AFF',
-    marginBottom: 10,
+    color: '#1A1A1A',
+    marginBottom: 8,
     textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
     color: '#6C757D',
-    marginBottom: 40,
+    marginBottom: 0,
     textAlign: 'center',
   },
   form: {
@@ -2613,18 +2658,21 @@ const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
     borderColor: '#DEE2E6',
-    borderRadius: 8,
-    padding: 15,
-    marginBottom: 15,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
     fontSize: 16,
     backgroundColor: '#FFFFFF',
+    minHeight: 52,
   },
   button: {
     backgroundColor: '#007AFF',
-    borderRadius: 8,
-    padding: 15,
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
     alignItems: 'center',
     marginBottom: 20,
+    minHeight: 52,
   },
   buttonText: {
     color: '#FFFFFF',
@@ -2636,6 +2684,7 @@ const styles = StyleSheet.create({
     color: '#6C757D',
     textAlign: 'center',
     fontStyle: 'italic',
+    lineHeight: 20,
   },
   sectionTitle: {
     fontSize: 24,
@@ -3804,12 +3853,13 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   registerLink: {
-    marginTop: 15,
+    marginBottom: 12,
     alignItems: 'center',
+    paddingVertical: 8,
   },
   registerLinkText: {
     color: '#007AFF',
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '500',
   },
   // Forgot Password Styles
@@ -3954,7 +4004,7 @@ const styles = StyleSheet.create({
   },
   forgotPasswordLink: {
     alignItems: 'center',
-    marginTop: 10,
+    paddingVertical: 8,
   },
   forgotPasswordLinkText: {
     color: '#6C757D',
