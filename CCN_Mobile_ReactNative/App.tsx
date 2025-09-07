@@ -36,6 +36,8 @@ const CCNMobileApp: React.FC = () => {
     clinicalImages: [],
     comorbidities: []
   });
+  const [joinedChannels, setJoinedChannels] = useState(new Set(['general'])); // User starts in general channel
+  const [isAnonymousMode, setIsAnonymousMode] = useState(false); // Identity hiding mode
 
   const handleLogin = () => {
     if (email === 'admin@test.com' && password === 'admin123456') {
@@ -76,6 +78,8 @@ const CCNMobileApp: React.FC = () => {
       clinicalImages: [],
       comorbidities: []
     });
+    setJoinedChannels(new Set(['general']));
+    setIsAnonymousMode(false);
     setEmail('');
     setPassword('');
   };
@@ -154,6 +158,46 @@ const CCNMobileApp: React.FC = () => {
     return ['Hypertension', 'Diabetes', 'Heart Disease', 'COPD', 'Asthma', 'Obesity', 'Depression', 'Anxiety', 'Arthritis', 'Cancer'];
   };
 
+  const handleJoinChannel = (channelId) => {
+    setJoinedChannels(prev => new Set([...prev, channelId]));
+    Alert.alert('Success', `Joined ${channelId} channel successfully!`);
+  };
+
+  const handleLeaveChannel = (channelId) => {
+    if (channelId === 'general') {
+      Alert.alert('Cannot Leave', 'You cannot leave the general channel as it is required for all users.');
+      return;
+    }
+    setJoinedChannels(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(channelId);
+      return newSet;
+    });
+    Alert.alert('Success', `Left ${channelId} channel successfully!`);
+  };
+
+  const isChannelJoined = (channelId) => {
+    return joinedChannels.has(channelId);
+  };
+
+  const toggleAnonymousMode = () => {
+    setIsAnonymousMode(!isAnonymousMode);
+    Alert.alert(
+      isAnonymousMode ? 'Identity Visible' : 'Identity Hidden',
+      isAnonymousMode 
+        ? 'Your identity is now visible to other practitioners.' 
+        : 'Your identity is now hidden. You will appear as "Anonymous" in discussions.'
+    );
+  };
+
+  const getDisplayName = () => {
+    return isAnonymousMode ? 'Anonymous' : 'Dr. Smith';
+  };
+
+  const getDisplayAvatar = () => {
+    return isAnonymousMode ? '👤' : '👨‍⚕️';
+  };
+
   if (!isLoggedIn) {
     return (
       <View style={styles.container}>
@@ -203,8 +247,23 @@ const CCNMobileApp: React.FC = () => {
       <ScrollView style={styles.content}>
         {currentScreen === 'home' && (
           <View>
-            <Text style={styles.sectionTitle}>Welcome to CCN!</Text>
-            <Text style={styles.sectionSubtitle}>Clinical Communication Network</Text>
+            <View style={styles.headerSection}>
+              <View style={styles.headerTop}>
+                <View>
+                  <Text style={styles.sectionTitle}>Welcome to CCN!</Text>
+                  <Text style={styles.sectionSubtitle}>Clinical Communication Network</Text>
+                </View>
+                <TouchableOpacity 
+                  style={[styles.anonymousToggle, isAnonymousMode && styles.anonymousToggleActive]}
+                  onPress={toggleAnonymousMode}
+                >
+                  <Text style={styles.anonymousIcon}>{isAnonymousMode ? '👤' : '👨‍⚕️'}</Text>
+                  <Text style={[styles.anonymousText, isAnonymousMode && styles.anonymousTextActive]}>
+                    {isAnonymousMode ? 'Anonymous' : 'Visible'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
             
             <View style={styles.featureGrid}>
               <TouchableOpacity 
@@ -413,75 +472,196 @@ const CCNMobileApp: React.FC = () => {
             </View>
 
             <View style={styles.channelList}>
-              <TouchableOpacity style={styles.channelItem} onPress={() => { setSelectedChannel('cardiology'); setCurrentScreen('channel'); }}>
-                <View style={styles.channelIcon}>
-                  <Text style={styles.channelEmoji}>❤️</Text>
+              <View style={styles.channelItem}>
+                <TouchableOpacity style={styles.channelItemContent} onPress={() => { setSelectedChannel('cardiology'); setCurrentScreen('channel'); }}>
+                  <View style={styles.channelIcon}>
+                    <Text style={styles.channelEmoji}>❤️</Text>
+                  </View>
+                  <View style={styles.channelInfo}>
+                    <Text style={styles.channelName}>Cardiology</Text>
+                    <Text style={styles.channelDesc}>Heart and cardiovascular system</Text>
+                    <Text style={styles.channelMembers}>342 members • 12 online</Text>
+                  </View>
+                  <View style={styles.channelBadge}>
+                    <Text style={styles.channelBadgeText}>Active</Text>
+                  </View>
+                </TouchableOpacity>
+                <View style={styles.channelActions}>
+                  {isChannelJoined('cardiology') ? (
+                    <TouchableOpacity 
+                      style={styles.leaveButton} 
+                      onPress={() => handleLeaveChannel('cardiology')}
+                    >
+                      <Text style={styles.leaveButtonText}>Leave</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity 
+                      style={styles.joinButton} 
+                      onPress={() => handleJoinChannel('cardiology')}
+                    >
+                      <Text style={styles.joinButtonText}>Join</Text>
+                    </TouchableOpacity>
+                  )}
+                  {isChannelJoined('cardiology') && (
+                    <TouchableOpacity 
+                      style={styles.startDiscussionButton} 
+                      onPress={handleStartDiscussion}
+                    >
+                      <Text style={styles.startDiscussionButtonText}>Start Discussion</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
-                <View style={styles.channelInfo}>
-                  <Text style={styles.channelName}>Cardiology</Text>
-                  <Text style={styles.channelDesc}>Heart and cardiovascular system</Text>
-                  <Text style={styles.channelMembers}>342 members • 12 online</Text>
-                </View>
-                <View style={styles.channelBadge}>
-                  <Text style={styles.channelBadgeText}>Active</Text>
-                </View>
-              </TouchableOpacity>
+              </View>
 
-              <TouchableOpacity style={styles.channelItem} onPress={() => { setSelectedChannel('emergency'); setCurrentScreen('channel'); }}>
-                <View style={styles.channelIcon}>
-                  <Text style={styles.channelEmoji}>🚨</Text>
+              <View style={styles.channelItem}>
+                <TouchableOpacity style={styles.channelItemContent} onPress={() => { setSelectedChannel('emergency'); setCurrentScreen('channel'); }}>
+                  <View style={styles.channelIcon}>
+                    <Text style={styles.channelEmoji}>🚨</Text>
+                  </View>
+                  <View style={styles.channelInfo}>
+                    <Text style={styles.channelName}>Emergency Medicine</Text>
+                    <Text style={styles.channelDesc}>Urgent care and trauma</Text>
+                    <Text style={styles.channelMembers}>189 members • 8 online</Text>
+                  </View>
+                  <View style={styles.channelBadge}>
+                    <Text style={styles.channelBadgeText}>Active</Text>
+                  </View>
+                </TouchableOpacity>
+                <View style={styles.channelActions}>
+                  {isChannelJoined('emergency') ? (
+                    <TouchableOpacity 
+                      style={styles.leaveButton} 
+                      onPress={() => handleLeaveChannel('emergency')}
+                    >
+                      <Text style={styles.leaveButtonText}>Leave</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity 
+                      style={styles.joinButton} 
+                      onPress={() => handleJoinChannel('emergency')}
+                    >
+                      <Text style={styles.joinButtonText}>Join</Text>
+                    </TouchableOpacity>
+                  )}
+                  {isChannelJoined('emergency') && (
+                    <TouchableOpacity 
+                      style={styles.startDiscussionButton} 
+                      onPress={handleStartDiscussion}
+                    >
+                      <Text style={styles.startDiscussionButtonText}>Start Discussion</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
-                <View style={styles.channelInfo}>
-                  <Text style={styles.channelName}>Emergency Medicine</Text>
-                  <Text style={styles.channelDesc}>Urgent care and trauma</Text>
-                  <Text style={styles.channelMembers}>189 members • 8 online</Text>
-                </View>
-                <View style={styles.channelBadge}>
-                  <Text style={styles.channelBadgeText}>Active</Text>
-                </View>
-              </TouchableOpacity>
+              </View>
 
-              <TouchableOpacity style={styles.channelItem} onPress={() => { setSelectedChannel('radiology'); setCurrentScreen('channel'); }}>
-                <View style={styles.channelIcon}>
-                  <Text style={styles.channelEmoji}>📷</Text>
+              <View style={styles.channelItem}>
+                <TouchableOpacity style={styles.channelItemContent} onPress={() => { setSelectedChannel('radiology'); setCurrentScreen('channel'); }}>
+                  <View style={styles.channelIcon}>
+                    <Text style={styles.channelEmoji}>📷</Text>
+                  </View>
+                  <View style={styles.channelInfo}>
+                    <Text style={styles.channelName}>Radiology</Text>
+                    <Text style={styles.channelDesc}>Medical imaging and diagnostics</Text>
+                    <Text style={styles.channelMembers}>156 members • 5 online</Text>
+                  </View>
+                  <View style={styles.channelBadge}>
+                    <Text style={styles.channelBadgeText}>Active</Text>
+                  </View>
+                </TouchableOpacity>
+                <View style={styles.channelActions}>
+                  {isChannelJoined('radiology') ? (
+                    <TouchableOpacity 
+                      style={styles.leaveButton} 
+                      onPress={() => handleLeaveChannel('radiology')}
+                    >
+                      <Text style={styles.leaveButtonText}>Leave</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity 
+                      style={styles.joinButton} 
+                      onPress={() => handleJoinChannel('radiology')}
+                    >
+                      <Text style={styles.joinButtonText}>Join</Text>
+                    </TouchableOpacity>
+                  )}
+                  {isChannelJoined('radiology') && (
+                    <TouchableOpacity 
+                      style={styles.startDiscussionButton} 
+                      onPress={handleStartDiscussion}
+                    >
+                      <Text style={styles.startDiscussionButtonText}>Start Discussion</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
-                <View style={styles.channelInfo}>
-                  <Text style={styles.channelName}>Radiology</Text>
-                  <Text style={styles.channelDesc}>Medical imaging and diagnostics</Text>
-                  <Text style={styles.channelMembers}>156 members • 5 online</Text>
-                </View>
-                <View style={styles.channelBadge}>
-                  <Text style={styles.channelBadgeText}>Active</Text>
-                </View>
-              </TouchableOpacity>
+              </View>
 
-              <TouchableOpacity style={styles.channelItem} onPress={() => { setSelectedChannel('pediatrics'); setCurrentScreen('channel'); }}>
-                <View style={styles.channelIcon}>
-                  <Text style={styles.channelEmoji}>👶</Text>
+              <View style={styles.channelItem}>
+                <TouchableOpacity style={styles.channelItemContent} onPress={() => { setSelectedChannel('pediatrics'); setCurrentScreen('channel'); }}>
+                  <View style={styles.channelIcon}>
+                    <Text style={styles.channelEmoji}>👶</Text>
+                  </View>
+                  <View style={styles.channelInfo}>
+                    <Text style={styles.channelName}>Pediatrics</Text>
+                    <Text style={styles.channelDesc}>Child and adolescent medicine</Text>
+                    <Text style={styles.channelMembers}>278 members • 15 online</Text>
+                  </View>
+                  <View style={styles.channelBadge}>
+                    <Text style={styles.channelBadgeText}>Active</Text>
+                  </View>
+                </TouchableOpacity>
+                <View style={styles.channelActions}>
+                  {isChannelJoined('pediatrics') ? (
+                    <TouchableOpacity 
+                      style={styles.leaveButton} 
+                      onPress={() => handleLeaveChannel('pediatrics')}
+                    >
+                      <Text style={styles.leaveButtonText}>Leave</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity 
+                      style={styles.joinButton} 
+                      onPress={() => handleJoinChannel('pediatrics')}
+                    >
+                      <Text style={styles.joinButtonText}>Join</Text>
+                    </TouchableOpacity>
+                  )}
+                  {isChannelJoined('pediatrics') && (
+                    <TouchableOpacity 
+                      style={styles.startDiscussionButton} 
+                      onPress={handleStartDiscussion}
+                    >
+                      <Text style={styles.startDiscussionButtonText}>Start Discussion</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
-                <View style={styles.channelInfo}>
-                  <Text style={styles.channelName}>Pediatrics</Text>
-                  <Text style={styles.channelDesc}>Child and adolescent medicine</Text>
-                  <Text style={styles.channelMembers}>278 members • 15 online</Text>
-                </View>
-                <View style={styles.channelBadge}>
-                  <Text style={styles.channelBadgeText}>Active</Text>
-                </View>
-              </TouchableOpacity>
+              </View>
 
-              <TouchableOpacity style={styles.channelItem} onPress={() => { setSelectedChannel('general'); setCurrentScreen('channel'); }}>
-                <View style={styles.channelIcon}>
-                  <Text style={styles.channelEmoji}>🩺</Text>
+              <View style={styles.channelItem}>
+                <TouchableOpacity style={styles.channelItemContent} onPress={() => { setSelectedChannel('general'); setCurrentScreen('channel'); }}>
+                  <View style={styles.channelIcon}>
+                    <Text style={styles.channelEmoji}>🩺</Text>
+                  </View>
+                  <View style={styles.channelInfo}>
+                    <Text style={styles.channelName}>General Medicine</Text>
+                    <Text style={styles.channelDesc}>Primary care and general practice</Text>
+                    <Text style={styles.channelMembers}>445 members • 23 online</Text>
+                  </View>
+                  <View style={styles.channelBadge}>
+                    <Text style={styles.channelBadgeText}>Active</Text>
+                  </View>
+                </TouchableOpacity>
+                <View style={styles.channelActions}>
+                  <View style={styles.joinedBadge}>
+                    <Text style={styles.joinedBadgeText}>Joined</Text>
+                  </View>
+                  <TouchableOpacity 
+                    style={styles.startDiscussionButton} 
+                    onPress={handleStartDiscussion}
+                  >
+                    <Text style={styles.startDiscussionButtonText}>Start Discussion</Text>
+                  </TouchableOpacity>
                 </View>
-                <View style={styles.channelInfo}>
-                  <Text style={styles.channelName}>General Medicine</Text>
-                  <Text style={styles.channelDesc}>Primary care and general practice</Text>
-                  <Text style={styles.channelMembers}>445 members • 23 online</Text>
-                </View>
-                <View style={styles.channelBadge}>
-                  <Text style={styles.channelBadgeText}>Active</Text>
-                </View>
-              </TouchableOpacity>
+              </View>
             </View>
 
             <TouchableOpacity style={styles.primaryButton}>
@@ -1059,6 +1239,19 @@ const CCNMobileApp: React.FC = () => {
               <Text style={styles.sectionSubtitle}>
                 Share your clinical case with the community
               </Text>
+              <View style={[styles.identityStatus, isAnonymousMode && styles.identityStatusAnonymous]}>
+                <Text style={styles.identityStatusText}>
+                  Posting as: {getDisplayName()} {getDisplayAvatar()}
+                </Text>
+                <TouchableOpacity 
+                  style={styles.identityToggle}
+                  onPress={toggleAnonymousMode}
+                >
+                  <Text style={styles.identityToggleText}>
+                    {isAnonymousMode ? 'Show Identity' : 'Hide Identity'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             <View style={styles.discussionForm}>
@@ -1232,6 +1425,19 @@ const CCNMobileApp: React.FC = () => {
               <Text style={styles.sectionSubtitle}>
                 Submit your clinical case for AI-powered analysis and peer review
               </Text>
+              <View style={[styles.identityStatus, isAnonymousMode && styles.identityStatusAnonymous]}>
+                <Text style={styles.identityStatusText}>
+                  Posting as: {getDisplayName()} {getDisplayAvatar()}
+                </Text>
+                <TouchableOpacity 
+                  style={styles.identityToggle}
+                  onPress={toggleAnonymousMode}
+                >
+                  <Text style={styles.identityToggleText}>
+                    {isAnonymousMode ? 'Show Identity' : 'Hide Identity'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             <View style={styles.clinicalForm}>
@@ -2634,6 +2840,138 @@ const styles = StyleSheet.create({
     color: '#2D5016',
     marginBottom: 4,
     marginLeft: 8,
+  },
+  channelItemContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  channelActions: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+  },
+  joinButton: {
+    backgroundColor: '#34C759',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    flex: 1,
+    alignItems: 'center',
+  },
+  joinButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  leaveButton: {
+    backgroundColor: '#FF3B30',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    flex: 1,
+    alignItems: 'center',
+  },
+  leaveButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  startDiscussionButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    flex: 1,
+    alignItems: 'center',
+  },
+  startDiscussionButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  joinedBadge: {
+    backgroundColor: '#E8F5E8',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    alignItems: 'center',
+    flex: 1,
+  },
+  joinedBadgeText: {
+    color: '#34C759',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  anonymousToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8F9FA',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E1E5E9',
+  },
+  anonymousToggleActive: {
+    backgroundColor: '#FFE5E5',
+    borderColor: '#FF3B30',
+  },
+  anonymousIcon: {
+    fontSize: 16,
+    marginRight: 6,
+  },
+  anonymousText: {
+    fontSize: 12,
+    color: '#6C757D',
+    fontWeight: '500',
+  },
+  anonymousTextActive: {
+    color: '#FF3B30',
+  },
+  identityStatus: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#F8F9FA',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: '#34C759',
+  },
+  identityStatusAnonymous: {
+    borderLeftColor: '#FF3B30',
+  },
+  identityStatusText: {
+    fontSize: 14,
+    color: '#495057',
+    fontWeight: '500',
+  },
+  identityToggle: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  identityToggleText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
   },
 });
 
