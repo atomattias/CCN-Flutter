@@ -39,6 +39,14 @@ const CCNMobileApp: React.FC = () => {
   const [joinedChannels, setJoinedChannels] = useState(new Set(['general'])); // User starts in general channel
   const [isAnonymousMode, setIsAnonymousMode] = useState(false); // Identity hiding mode
   const [showRegistration, setShowRegistration] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotPasswordStep, setForgotPasswordStep] = useState(1); // 1: Email, 2: OTP, 3: New Password
+  const [forgotPasswordData, setForgotPasswordData] = useState({
+    email: '',
+    otp: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
   
   // Registration form fields
   const [registrationData, setRegistrationData] = useState({
@@ -320,6 +328,102 @@ const CCNMobileApp: React.FC = () => {
     'Academic Faculty', 'Research Physician', 'Other'
   ];
 
+  const handleForgotPassword = () => {
+    if (!forgotPasswordData.email) {
+      Alert.alert('Error', 'Please enter your email address.');
+      return;
+    }
+
+    // Simulate sending OTP
+    Alert.alert(
+      'OTP Sent',
+      `A verification code has been sent to ${forgotPasswordData.email}. Please check your email.`,
+      [
+        {
+          text: 'OK',
+          onPress: () => setForgotPasswordStep(2)
+        }
+      ]
+    );
+  };
+
+  const handleVerifyOTP = () => {
+    if (!forgotPasswordData.otp) {
+      Alert.alert('Error', 'Please enter the verification code.');
+      return;
+    }
+
+    // Simulate OTP verification (in real app, this would verify with backend)
+    if (forgotPasswordData.otp.length === 6) {
+      setForgotPasswordStep(3);
+    } else {
+      Alert.alert('Error', 'Please enter a valid 6-digit verification code.');
+    }
+  };
+
+  const handleResetPassword = () => {
+    if (!forgotPasswordData.newPassword || !forgotPasswordData.confirmPassword) {
+      Alert.alert('Error', 'Please fill in all password fields.');
+      return;
+    }
+
+    if (forgotPasswordData.newPassword !== forgotPasswordData.confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match.');
+      return;
+    }
+
+    if (forgotPasswordData.newPassword.length < 8) {
+      Alert.alert('Error', 'Password must be at least 8 characters long.');
+      return;
+    }
+
+    // Simulate password reset success
+    Alert.alert(
+      'Password Reset Successful',
+      'Your password has been successfully reset. You can now login with your new password.',
+      [
+        {
+          text: 'OK',
+          onPress: () => {
+            setShowForgotPassword(false);
+            setForgotPasswordStep(1);
+            setForgotPasswordData({
+              email: '',
+              otp: '',
+              newPassword: '',
+              confirmPassword: ''
+            });
+          }
+        }
+      ]
+    );
+  };
+
+  const updateForgotPasswordField = (field: string, value: string) => {
+    setForgotPasswordData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const resendOTP = () => {
+    Alert.alert(
+      'OTP Resent',
+      `A new verification code has been sent to ${forgotPasswordData.email}.`,
+      [
+        {
+          text: 'OK',
+          onPress: () => {
+            setForgotPasswordData(prev => ({
+              ...prev,
+              otp: ''
+            }));
+          }
+        }
+      ]
+    );
+  };
+
   if (!isLoggedIn) {
     return (
       <View style={styles.container}>
@@ -353,6 +457,13 @@ const CCNMobileApp: React.FC = () => {
             onPress={() => setShowRegistration(true)}
           >
             <Text style={styles.registerLinkText}>New to CCN? Create Account</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.forgotPasswordLink} 
+            onPress={() => setShowForgotPassword(true)}
+          >
+            <Text style={styles.forgotPasswordLinkText}>Forgot Password?</Text>
           </TouchableOpacity>
           
           <Text style={styles.demoText}>
@@ -697,6 +808,197 @@ const CCNMobileApp: React.FC = () => {
           </Text>
         </View>
       </ScrollView>
+    );
+  }
+
+  // Forgot Password Screen
+  if (showForgotPassword) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.forgotPasswordHeader}>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={() => {
+              setShowForgotPassword(false);
+              setForgotPasswordStep(1);
+              setForgotPasswordData({
+                email: '',
+                otp: '',
+                newPassword: '',
+                confirmPassword: ''
+              });
+            }}
+          >
+            <Text style={styles.backText}>← Back to Login</Text>
+          </TouchableOpacity>
+          <Text style={styles.title}>Reset Password</Text>
+          <Text style={styles.subtitle}>Recover your CCN account access</Text>
+        </View>
+
+        {/* Step 1: Email Verification */}
+        {forgotPasswordStep === 1 && (
+          <View style={styles.forgotPasswordContent}>
+            <View style={styles.stepIndicator}>
+              <View style={styles.stepActive}>
+                <Text style={styles.stepNumber}>1</Text>
+              </View>
+              <View style={styles.stepLine}></View>
+              <View style={styles.stepInactive}>
+                <Text style={styles.stepNumberInactive}>2</Text>
+              </View>
+              <View style={styles.stepLine}></View>
+              <View style={styles.stepInactive}>
+                <Text style={styles.stepNumberInactive}>3</Text>
+              </View>
+            </View>
+
+            <Text style={styles.stepTitle}>Enter Your Email</Text>
+            <Text style={styles.stepDescription}>
+              We'll send a verification code to your registered email address.
+            </Text>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.formLabel}>Email Address</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter your email address"
+                value={forgotPasswordData.email}
+                onChangeText={(value) => updateForgotPasswordField('email', value)}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoComplete="email"
+              />
+            </View>
+
+            <TouchableOpacity style={styles.primaryButton} onPress={handleForgotPassword}>
+              <Text style={styles.primaryButtonText}>Send Verification Code</Text>
+            </TouchableOpacity>
+
+            <View style={styles.securityNote}>
+              <Text style={styles.securityNoteText}>
+                🔒 Your email address is secure and will only be used for password recovery.
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {/* Step 2: OTP Verification */}
+        {forgotPasswordStep === 2 && (
+          <View style={styles.forgotPasswordContent}>
+            <View style={styles.stepIndicator}>
+              <View style={styles.stepCompleted}>
+                <Text style={styles.stepNumber}>✓</Text>
+              </View>
+              <View style={styles.stepLineCompleted}></View>
+              <View style={styles.stepActive}>
+                <Text style={styles.stepNumber}>2</Text>
+              </View>
+              <View style={styles.stepLine}></View>
+              <View style={styles.stepInactive}>
+                <Text style={styles.stepNumberInactive}>3</Text>
+              </View>
+            </View>
+
+            <Text style={styles.stepTitle}>Verify Your Email</Text>
+            <Text style={styles.stepDescription}>
+              Enter the 6-digit verification code sent to {forgotPasswordData.email}
+            </Text>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.formLabel}>Verification Code</Text>
+              <TextInput
+                style={styles.otpInput}
+                placeholder="000000"
+                value={forgotPasswordData.otp}
+                onChangeText={(value) => updateForgotPasswordField('otp', value)}
+                keyboardType="numeric"
+                maxLength={6}
+                textAlign="center"
+                autoComplete="one-time-code"
+              />
+            </View>
+
+            <TouchableOpacity style={styles.primaryButton} onPress={handleVerifyOTP}>
+              <Text style={styles.primaryButtonText}>Verify Code</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.resendButton} onPress={resendOTP}>
+              <Text style={styles.resendButtonText}>Resend Code</Text>
+            </TouchableOpacity>
+
+            <View style={styles.securityNote}>
+              <Text style={styles.securityNoteText}>
+                ⏰ Verification code expires in 10 minutes.
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {/* Step 3: New Password */}
+        {forgotPasswordStep === 3 && (
+          <View style={styles.forgotPasswordContent}>
+            <View style={styles.stepIndicator}>
+              <View style={styles.stepCompleted}>
+                <Text style={styles.stepNumber}>✓</Text>
+              </View>
+              <View style={styles.stepLineCompleted}></View>
+              <View style={styles.stepCompleted}>
+                <Text style={styles.stepNumber}>✓</Text>
+              </View>
+              <View style={styles.stepLineCompleted}></View>
+              <View style={styles.stepActive}>
+                <Text style={styles.stepNumber}>3</Text>
+              </View>
+            </View>
+
+            <Text style={styles.stepTitle}>Create New Password</Text>
+            <Text style={styles.stepDescription}>
+              Choose a strong password for your CCN account.
+            </Text>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.formLabel}>New Password</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter new password"
+                value={forgotPasswordData.newPassword}
+                onChangeText={(value) => updateForgotPasswordField('newPassword', value)}
+                secureTextEntry
+                autoComplete="new-password"
+              />
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.formLabel}>Confirm New Password</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Confirm new password"
+                value={forgotPasswordData.confirmPassword}
+                onChangeText={(value) => updateForgotPasswordField('confirmPassword', value)}
+                secureTextEntry
+                autoComplete="new-password"
+              />
+            </View>
+
+            <View style={styles.passwordRequirements}>
+              <Text style={styles.passwordRequirementsTitle}>Password Requirements:</Text>
+              <Text style={styles.passwordRequirement}>• At least 8 characters long</Text>
+              <Text style={styles.passwordRequirement}>• Mix of letters, numbers, and symbols</Text>
+              <Text style={styles.passwordRequirement}>• Different from your previous password</Text>
+            </View>
+
+            <TouchableOpacity style={styles.primaryButton} onPress={handleResetPassword}>
+              <Text style={styles.primaryButtonText}>Reset Password</Text>
+            </TouchableOpacity>
+
+            <View style={styles.securityNote}>
+              <Text style={styles.securityNoteText}>
+                🔐 Your new password will be encrypted and stored securely.
+              </Text>
+            </View>
+          </View>
+        )}
+      </View>
     );
   }
 
@@ -3509,6 +3811,155 @@ const styles = StyleSheet.create({
     color: '#007AFF',
     fontSize: 14,
     fontWeight: '500',
+  },
+  // Forgot Password Styles
+  forgotPasswordHeader: {
+    padding: 20,
+    backgroundColor: '#F8F9FA',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E1E5E9',
+  },
+  forgotPasswordContent: {
+    flex: 1,
+    padding: 20,
+  },
+  stepIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 30,
+  },
+  stepActive: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#007AFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepInactive: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#E1E5E9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepCompleted: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#34C759',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepNumber: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  stepNumberInactive: {
+    color: '#6C757D',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  stepLine: {
+    width: 40,
+    height: 2,
+    backgroundColor: '#E1E5E9',
+    marginHorizontal: 10,
+  },
+  stepLineCompleted: {
+    width: 40,
+    height: 2,
+    backgroundColor: '#34C759',
+    marginHorizontal: 10,
+  },
+  stepTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#1A1A1A',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  stepDescription: {
+    fontSize: 16,
+    color: '#6C757D',
+    textAlign: 'center',
+    marginBottom: 30,
+    lineHeight: 22,
+  },
+  formGroup: {
+    marginBottom: 20,
+  },
+  otpInput: {
+    borderWidth: 2,
+    borderColor: '#E1E5E9',
+    borderRadius: 12,
+    padding: 15,
+    fontSize: 24,
+    fontWeight: '600',
+    letterSpacing: 8,
+    backgroundColor: '#FFFFFF',
+  },
+  primaryButton: {
+    backgroundColor: '#007AFF',
+    paddingVertical: 15,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  primaryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  resendButton: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  resendButtonText: {
+    color: '#007AFF',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  passwordRequirements: {
+    backgroundColor: '#F8F9FA',
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 20,
+  },
+  passwordRequirementsTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#495057',
+    marginBottom: 8,
+  },
+  passwordRequirement: {
+    fontSize: 13,
+    color: '#6C757D',
+    marginBottom: 4,
+  },
+  securityNote: {
+    backgroundColor: '#E3F2FD',
+    padding: 15,
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#2196F3',
+  },
+  securityNoteText: {
+    fontSize: 13,
+    color: '#1976D2',
+    lineHeight: 18,
+  },
+  forgotPasswordLink: {
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  forgotPasswordLinkText: {
+    color: '#6C757D',
+    fontSize: 14,
+    fontWeight: '400',
   },
 });
 
