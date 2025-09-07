@@ -38,6 +38,59 @@ const CCNMobileApp: React.FC = () => {
   });
   const [joinedChannels, setJoinedChannels] = useState(new Set(['general'])); // User starts in general channel
   const [isAnonymousMode, setIsAnonymousMode] = useState(false); // Identity hiding mode
+  const [showRegistration, setShowRegistration] = useState(false);
+  
+  // Registration form fields
+  const [registrationData, setRegistrationData] = useState({
+    // Personal Information
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    phoneNumber: '',
+    dateOfBirth: '',
+    gender: '',
+    
+    // Professional Information
+    medicalLicenseNumber: '',
+    specialty: '',
+    subSpecialty: '',
+    yearsOfExperience: '',
+    currentHospital: '',
+    currentPosition: '',
+    medicalSchool: '',
+    graduationYear: '',
+    
+    // Professional Certifications
+    boardCertifications: [],
+    additionalCertifications: [],
+    
+    // Contact Information
+    workAddress: '',
+    workCity: '',
+    workState: '',
+    workCountry: '',
+    workPostalCode: '',
+    
+    // Preferences
+    preferredLanguage: 'English',
+    timeZone: '',
+    notificationPreferences: {
+      emailNotifications: true,
+      pushNotifications: true,
+      smsNotifications: false,
+      clinicalAlerts: true,
+      peerReviewRequests: true,
+      systemUpdates: false
+    },
+    
+    // Terms and Conditions
+    agreeToTerms: false,
+    agreeToPrivacyPolicy: false,
+    agreeToDataProcessing: false,
+    agreeToClinicalGuidelines: false
+  });
 
   const handleLogin = () => {
     if (email === 'admin@test.com' && password === 'admin123456') {
@@ -198,6 +251,75 @@ const CCNMobileApp: React.FC = () => {
     return isAnonymousMode ? '👤' : '👨‍⚕️';
   };
 
+  const handleRegistration = () => {
+    // Validate required fields
+    if (!registrationData.firstName || !registrationData.lastName || !registrationData.email || 
+        !registrationData.password || !registrationData.medicalLicenseNumber || 
+        !registrationData.specialty || !registrationData.currentHospital) {
+      Alert.alert('Registration Error', 'Please fill in all required fields.');
+      return;
+    }
+
+    if (registrationData.password !== registrationData.confirmPassword) {
+      Alert.alert('Registration Error', 'Passwords do not match.');
+      return;
+    }
+
+    if (!registrationData.agreeToTerms || !registrationData.agreeToPrivacyPolicy || 
+        !registrationData.agreeToDataProcessing || !registrationData.agreeToClinicalGuidelines) {
+      Alert.alert('Registration Error', 'Please agree to all terms and conditions.');
+      return;
+    }
+
+    // Simulate registration success
+    Alert.alert(
+      'Registration Successful!', 
+      'Your account has been created. Please wait for verification of your medical credentials.',
+      [
+        {
+          text: 'OK',
+          onPress: () => {
+            setShowRegistration(false);
+            setEmail(registrationData.email);
+            setPassword(registrationData.password);
+            Alert.alert('Next Steps', 'Please check your email for verification instructions.');
+          }
+        }
+      ]
+    );
+  };
+
+  const updateRegistrationField = (field: string, value: any) => {
+    setRegistrationData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const updateNotificationPreference = (preference: string, value: boolean) => {
+    setRegistrationData(prev => ({
+      ...prev,
+      notificationPreferences: {
+        ...prev.notificationPreferences,
+        [preference]: value
+      }
+    }));
+  };
+
+  const getMedicalSpecialties = () => [
+    'Internal Medicine', 'Surgery', 'Pediatrics', 'Obstetrics & Gynecology',
+    'Psychiatry', 'Radiology', 'Anesthesiology', 'Emergency Medicine',
+    'Family Medicine', 'Cardiology', 'Neurology', 'Orthopedics',
+    'Dermatology', 'Ophthalmology', 'ENT', 'Urology', 'Oncology',
+    'Pathology', 'Public Health', 'Other'
+  ];
+
+  const getMedicalPositions = () => [
+    'Resident', 'Fellow', 'Attending Physician', 'Chief Resident',
+    'Department Head', 'Medical Director', 'Consultant', 'Private Practice',
+    'Academic Faculty', 'Research Physician', 'Other'
+  ];
+
   if (!isLoggedIn) {
     return (
       <View style={styles.container}>
@@ -226,11 +348,355 @@ const CCNMobileApp: React.FC = () => {
             <Text style={styles.buttonText}>Login</Text>
           </TouchableOpacity>
           
+          <TouchableOpacity 
+            style={styles.registerLink} 
+            onPress={() => setShowRegistration(true)}
+          >
+            <Text style={styles.registerLinkText}>New to CCN? Create Account</Text>
+          </TouchableOpacity>
+          
           <Text style={styles.demoText}>
             Demo: admin@test.com / admin123456
           </Text>
         </View>
       </View>
+    );
+  }
+
+  // Registration Screen
+  if (showRegistration) {
+    return (
+      <ScrollView style={styles.container}>
+        <View style={styles.registrationHeader}>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={() => setShowRegistration(false)}
+          >
+            <Text style={styles.backText}>← Back to Login</Text>
+          </TouchableOpacity>
+          <Text style={styles.title}>Medical Practitioner Registration</Text>
+          <Text style={styles.subtitle}>Join the Clinical Communication Network</Text>
+        </View>
+
+        {/* Personal Information Section */}
+        <View style={styles.registrationSection}>
+          <Text style={styles.sectionTitle}>Personal Information</Text>
+          
+          <View style={styles.formRow}>
+            <View style={styles.halfInput}>
+              <Text style={styles.formLabel}>First Name *</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter first name"
+                value={registrationData.firstName}
+                onChangeText={(value) => updateRegistrationField('firstName', value)}
+              />
+            </View>
+            <View style={styles.halfInput}>
+              <Text style={styles.formLabel}>Last Name *</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter last name"
+                value={registrationData.lastName}
+                onChangeText={(value) => updateRegistrationField('lastName', value)}
+              />
+            </View>
+          </View>
+
+          <Text style={styles.formLabel}>Email Address *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter email address"
+            value={registrationData.email}
+            onChangeText={(value) => updateRegistrationField('email', value)}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+
+          <View style={styles.formRow}>
+            <View style={styles.halfInput}>
+              <Text style={styles.formLabel}>Password *</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Create password"
+                value={registrationData.password}
+                onChangeText={(value) => updateRegistrationField('password', value)}
+                secureTextEntry
+              />
+            </View>
+            <View style={styles.halfInput}>
+              <Text style={styles.formLabel}>Confirm Password *</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Confirm password"
+                value={registrationData.confirmPassword}
+                onChangeText={(value) => updateRegistrationField('confirmPassword', value)}
+                secureTextEntry
+              />
+            </View>
+          </View>
+
+          <View style={styles.formRow}>
+            <View style={styles.halfInput}>
+              <Text style={styles.formLabel}>Phone Number</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="+1 (555) 123-4567"
+                value={registrationData.phoneNumber}
+                onChangeText={(value) => updateRegistrationField('phoneNumber', value)}
+                keyboardType="phone-pad"
+              />
+            </View>
+            <View style={styles.halfInput}>
+              <Text style={styles.formLabel}>Gender</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Male/Female/Other"
+                value={registrationData.gender}
+                onChangeText={(value) => updateRegistrationField('gender', value)}
+              />
+            </View>
+          </View>
+        </View>
+
+        {/* Professional Information Section */}
+        <View style={styles.registrationSection}>
+          <Text style={styles.sectionTitle}>Professional Information</Text>
+          
+          <Text style={styles.formLabel}>Medical License Number *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter medical license number"
+            value={registrationData.medicalLicenseNumber}
+            onChangeText={(value) => updateRegistrationField('medicalLicenseNumber', value)}
+          />
+
+          <View style={styles.formRow}>
+            <View style={styles.halfInput}>
+              <Text style={styles.formLabel}>Medical Specialty *</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Select specialty"
+                value={registrationData.specialty}
+                onChangeText={(value) => updateRegistrationField('specialty', value)}
+              />
+            </View>
+            <View style={styles.halfInput}>
+              <Text style={styles.formLabel}>Sub-Specialty</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter sub-specialty"
+                value={registrationData.subSpecialty}
+                onChangeText={(value) => updateRegistrationField('subSpecialty', value)}
+              />
+            </View>
+          </View>
+
+          <View style={styles.formRow}>
+            <View style={styles.halfInput}>
+              <Text style={styles.formLabel}>Years of Experience</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="e.g., 5"
+                value={registrationData.yearsOfExperience}
+                onChangeText={(value) => updateRegistrationField('yearsOfExperience', value)}
+                keyboardType="numeric"
+              />
+            </View>
+            <View style={styles.halfInput}>
+              <Text style={styles.formLabel}>Current Position</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="e.g., Attending Physician"
+                value={registrationData.currentPosition}
+                onChangeText={(value) => updateRegistrationField('currentPosition', value)}
+              />
+            </View>
+          </View>
+
+          <Text style={styles.formLabel}>Current Hospital/Institution *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter hospital or institution name"
+            value={registrationData.currentHospital}
+            onChangeText={(value) => updateRegistrationField('currentHospital', value)}
+          />
+
+          <View style={styles.formRow}>
+            <View style={styles.halfInput}>
+              <Text style={styles.formLabel}>Medical School</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter medical school"
+                value={registrationData.medicalSchool}
+                onChangeText={(value) => updateRegistrationField('medicalSchool', value)}
+              />
+            </View>
+            <View style={styles.halfInput}>
+              <Text style={styles.formLabel}>Graduation Year</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="e.g., 2015"
+                value={registrationData.graduationYear}
+                onChangeText={(value) => updateRegistrationField('graduationYear', value)}
+                keyboardType="numeric"
+              />
+            </View>
+          </View>
+        </View>
+
+        {/* Work Address Section */}
+        <View style={styles.registrationSection}>
+          <Text style={styles.sectionTitle}>Work Address</Text>
+          
+          <Text style={styles.formLabel}>Street Address</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter work address"
+            value={registrationData.workAddress}
+            onChangeText={(value) => updateRegistrationField('workAddress', value)}
+          />
+
+          <View style={styles.formRow}>
+            <View style={styles.halfInput}>
+              <Text style={styles.formLabel}>City</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter city"
+                value={registrationData.workCity}
+                onChangeText={(value) => updateRegistrationField('workCity', value)}
+              />
+            </View>
+            <View style={styles.halfInput}>
+              <Text style={styles.formLabel}>State/Province</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter state"
+                value={registrationData.workState}
+                onChangeText={(value) => updateRegistrationField('workState', value)}
+              />
+            </View>
+          </View>
+
+          <View style={styles.formRow}>
+            <View style={styles.halfInput}>
+              <Text style={styles.formLabel}>Country</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter country"
+                value={registrationData.workCountry}
+                onChangeText={(value) => updateRegistrationField('workCountry', value)}
+              />
+            </View>
+            <View style={styles.halfInput}>
+              <Text style={styles.formLabel}>Postal Code</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter postal code"
+                value={registrationData.workPostalCode}
+                onChangeText={(value) => updateRegistrationField('workPostalCode', value)}
+              />
+            </View>
+          </View>
+        </View>
+
+        {/* Notification Preferences Section */}
+        <View style={styles.registrationSection}>
+          <Text style={styles.sectionTitle}>Notification Preferences</Text>
+          
+          <View style={styles.checkboxContainer}>
+            <TouchableOpacity 
+              style={styles.checkbox}
+              onPress={() => updateNotificationPreference('emailNotifications', !registrationData.notificationPreferences.emailNotifications)}
+            >
+              <Text style={styles.checkboxText}>
+                {registrationData.notificationPreferences.emailNotifications ? '☑️' : '☐'} Email Notifications
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.checkbox}
+              onPress={() => updateNotificationPreference('pushNotifications', !registrationData.notificationPreferences.pushNotifications)}
+            >
+              <Text style={styles.checkboxText}>
+                {registrationData.notificationPreferences.pushNotifications ? '☑️' : '☐'} Push Notifications
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.checkbox}
+              onPress={() => updateNotificationPreference('clinicalAlerts', !registrationData.notificationPreferences.clinicalAlerts)}
+            >
+              <Text style={styles.checkboxText}>
+                {registrationData.notificationPreferences.clinicalAlerts ? '☑️' : '☐'} Clinical Alerts
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.checkbox}
+              onPress={() => updateNotificationPreference('peerReviewRequests', !registrationData.notificationPreferences.peerReviewRequests)}
+            >
+              <Text style={styles.checkboxText}>
+                {registrationData.notificationPreferences.peerReviewRequests ? '☑️' : '☐'} Peer Review Requests
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Terms and Conditions Section */}
+        <View style={styles.registrationSection}>
+          <Text style={styles.sectionTitle}>Terms and Conditions</Text>
+          
+          <View style={styles.checkboxContainer}>
+            <TouchableOpacity 
+              style={styles.checkbox}
+              onPress={() => updateRegistrationField('agreeToTerms', !registrationData.agreeToTerms)}
+            >
+              <Text style={styles.checkboxText}>
+                {registrationData.agreeToTerms ? '☑️' : '☐'} I agree to the Terms of Service *
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.checkbox}
+              onPress={() => updateRegistrationField('agreeToPrivacyPolicy', !registrationData.agreeToPrivacyPolicy)}
+            >
+              <Text style={styles.checkboxText}>
+                {registrationData.agreeToPrivacyPolicy ? '☑️' : '☐'} I agree to the Privacy Policy *
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.checkbox}
+              onPress={() => updateRegistrationField('agreeToDataProcessing', !registrationData.agreeToDataProcessing)}
+            >
+              <Text style={styles.checkboxText}>
+                {registrationData.agreeToDataProcessing ? '☑️' : '☐'} I consent to data processing for clinical purposes *
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.checkbox}
+              onPress={() => updateRegistrationField('agreeToClinicalGuidelines', !registrationData.agreeToClinicalGuidelines)}
+            >
+              <Text style={styles.checkboxText}>
+                {registrationData.agreeToClinicalGuidelines ? '☑️' : '☐'} I agree to follow clinical communication guidelines *
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Registration Button */}
+        <View style={styles.registrationFooter}>
+          <TouchableOpacity style={styles.registerButton} onPress={handleRegistration}>
+            <Text style={styles.registerButtonText}>Create Account</Text>
+          </TouchableOpacity>
+          
+          <Text style={styles.registrationNote}>
+            * Required fields. Your medical credentials will be verified before account activation.
+          </Text>
+        </View>
+      </ScrollView>
     );
   }
 
@@ -2972,6 +3438,77 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '600',
+  },
+  // Registration Form Styles
+  registrationHeader: {
+    padding: 20,
+    backgroundColor: '#F8F9FA',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E1E5E9',
+  },
+  registrationSection: {
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E1E5E9',
+  },
+  formRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 15,
+  },
+  halfInput: {
+    flex: 1,
+    marginRight: 10,
+  },
+  formLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#495057',
+    marginBottom: 8,
+  },
+  checkboxContainer: {
+    marginTop: 10,
+  },
+  checkbox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  checkboxText: {
+    fontSize: 14,
+    color: '#495057',
+    marginLeft: 8,
+  },
+  registrationFooter: {
+    padding: 20,
+    backgroundColor: '#F8F9FA',
+  },
+  registerButton: {
+    backgroundColor: '#007AFF',
+    paddingVertical: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  registerButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  registrationNote: {
+    fontSize: 12,
+    color: '#6C757D',
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  registerLink: {
+    marginTop: 15,
+    alignItems: 'center',
+  },
+  registerLinkText: {
+    color: '#007AFF',
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
 
