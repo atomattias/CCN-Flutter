@@ -1,5 +1,3 @@
-import CryptoJS from 'crypto-js';
-import { Buffer } from 'buffer';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
 

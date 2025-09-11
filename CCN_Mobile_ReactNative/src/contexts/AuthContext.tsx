@@ -1,26 +1,20 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User } from '../types';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { User, LoginCredentials, AuthResponse } from '../types';
 import authService from '../services/authService';
 
 interface AuthContextType {
   user: User | null;
-  isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  isLoading: boolean;
+  login: (credentials: LoginCredentials) => Promise<void>;
   signUp: (userData: Partial<User> & { password: string }) => Promise<void>;
   logout: () => Promise<void>;
-  updateProfile: (userData: Partial<User>) => Promise<void>;
+  updateUser: (userData: Partial<User>) => Promise<void>;
+  refreshAuth: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -28,44 +22,83 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // Check authentication status on app start
   useEffect(() => {
     checkAuthStatus();
   }, []);
 
+  // Debug state changes
+  useEffect(() => {
+    console.log('AuthContext: State changed - isAuthenticated:', isAuthenticated, 'isLoading:', isLoading, 'user:', user?.email);
+  }, [isAuthenticated, isLoading, user]);
+
   const checkAuthStatus = async () => {
     try {
-      // Add timeout to prevent hanging
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Auth check timeout')), 3000)
-      );
+      setIsLoading(true);
       
-      const authPromise = authService.isAuthenticated();
-      const authenticated = await Promise.race([authPromise, timeoutPromise]) as boolean;
+      // Check if there's a stored token
+      const token = await AsyncStorage.getItem('authToken');
       
-      if (authenticated) {
+      if (token) {
+        // Verify token is still valid by getting current user
         const currentUser = await authService.getCurrentUser();
-        setUser(currentUser);
-        setIsAuthenticated(true);
+        
+        if (currentUser) {
+          setUser(currentUser);
+          setIsAuthenticated(true);
+        } else {
+          // Token exists but user data is invalid, clear it
+          await clearAuthData();
+        }
+      } else {
+        // No token, user is not authenticated
+        setIsAuthenticated(false);
+        setUser(null);
       }
     } catch (error) {
       console.error('Auth check error:', error);
-      // Set as not authenticated if there's an error
-      setIsAuthenticated(false);
+      // On error, assume not authenticated and clear any stored data
+      await clearAuthData();
     } finally {
       setIsLoading(false);
     }
   };
 
-  const login = async (email: string, password: string) => {
+  const clearAuthData = async () => {
     try {
-      setIsLoading(true);
-      const response = await authService.login({ email, password });
-      setUser(response.user);
-      setIsAuthenticated(true);
+      await AsyncStorage.multiRemove(['authToken', 'user']);
+      setUser(null);
+      setIsAuthenticated(false);
     } catch (error) {
+      console.error('Error clearing auth data:', error);
+    }
+  };
+
+  const login = async (credentials: LoginCredentials) => {
+    try {
+      console.log('AuthContext: Starting login process');
+      setIsLoading(true);
+      
+      console.log('AuthContext: Calling authService.login');
+      const response = await authService.login(credentials);
+      console.log('AuthContext: Received response:', response);
+      
+      if (response.user && response.token) {
+        console.log('AuthContext: Setting user and authentication state');
+        setUser(response.user);
+        setIsAuthenticated(true);
+        console.log('AuthContext: State updated - user:', response.user, 'isAuthenticated: true');
+      } else {
+        console.log('AuthContext: Invalid response format');
+        throw new Error('Invalid response from server');
+      }
+    } catch (error) {
+      console.log('AuthContext: Login error:', error);
+      // Clear any partial auth data on login failure
+      await clearAuthData();
       throw error;
     } finally {
       setIsLoading(false);
@@ -75,10 +108,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signUp = async (userData: Partial<User> & { password: string }) => {
     try {
       setIsLoading(true);
+      
       const response = await authService.signUp(userData);
-      setUser(response.user);
-      setIsAuthenticated(true);
+      
+      if (response.user && response.token) {
+        setUser(response.user);
+        setIsAuthenticated(true);
+      } else {
+        throw new Error('Invalid response from server');
+      }
     } catch (error) {
+      // Clear any partial auth data on signup failure
+      await clearAuthData();
       throw error;
     } finally {
       setIsLoading(false);
@@ -88,36 +129,45 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = async () => {
     try {
       setIsLoading(true);
+      
+      // Call logout service to invalidate token on server
       await authService.logout();
-      setUser(null);
-      setIsAuthenticated(false);
+      
+      // Clear local auth data
+      await clearAuthData();
+      
     } catch (error) {
       console.error('Logout error:', error);
+      // Even if server logout fails, clear local data
+      await clearAuthData();
     } finally {
       setIsLoading(false);
     }
   };
 
-  const updateProfile = async (userData: Partial<User>) => {
+  const updateUser = async (userData: Partial<User>) => {
     try {
-      setIsLoading(true);
       const updatedUser = await authService.updateProfile(userData);
       setUser(updatedUser);
     } catch (error) {
+      console.error('Update user error:', error);
       throw error;
-    } finally {
-      setIsLoading(false);
     }
+  };
+
+  const refreshAuth = async () => {
+    await checkAuthStatus();
   };
 
   const value: AuthContextType = {
     user,
-    isLoading,
     isAuthenticated,
+    isLoading,
     login,
     signUp,
     logout,
-    updateProfile,
+    updateUser,
+    refreshAuth,
   };
 
   return (
@@ -127,3 +177,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   );
 };
 
+export const useAuth = (): AuthContextType => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};

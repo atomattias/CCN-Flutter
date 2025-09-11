@@ -6,24 +6,30 @@ class AuthService {
   // Login user
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     try {
+      console.log('AuthService: Making API call to /api/auth/signin');
       const response = await apiService.post<any>('/api/auth/signin', credentials);
+      console.log('AuthService: Received response:', response);
       
       // Handle backend response format: { success: true, data: { token, ...userData } }
       if (response.success && response.data) {
         const { token, ...userData } = response.data;
+        console.log('AuthService: Extracted token and user data');
         
         // Store token and user data
         await AsyncStorage.setItem('authToken', token);
         await AsyncStorage.setItem('user', JSON.stringify(userData));
+        console.log('AuthService: Stored auth data in AsyncStorage');
         
         return {
           token,
           user: userData
         };
       } else {
+        console.log('AuthService: Invalid response format');
         throw new Error('Invalid response format from server');
       }
     } catch (error: any) {
+      console.log('AuthService: Login error:', error);
       throw new Error(error.response?.data?.message || 'Login failed');
     }
   }

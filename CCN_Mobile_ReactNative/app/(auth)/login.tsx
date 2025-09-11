@@ -7,12 +7,14 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  TouchableOpacity,
 } from 'react-native';
-import { useAuth } from '../contexts/AuthContext';
-import { CustomButton } from '../components/CustomButton';
-import { CustomInput } from '../components/CustomInput';
+import { router } from 'expo-router';
+import { useAuth } from '../../src/contexts/AuthContext';
+import { CustomButton } from '../../src/components/CustomButton';
+import { CustomInput } from '../../src/components/CustomInput';
 
-export const LoginScreen: React.FC = () => {
+export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
@@ -39,14 +41,34 @@ export const LoginScreen: React.FC = () => {
   };
 
   const handleLogin = async () => {
-    if (!validateForm()) return;
+    console.log('Login button pressed');
+    if (!validateForm()) {
+      console.log('Form validation failed');
+      return;
+    }
 
+    console.log('Attempting login with:', { email, password: '***' });
     try {
-      await login(email, password);
-      // Navigation will be handled by the auth context
+      await login({ email, password });
+      console.log('Login successful');
+      // Navigation will be handled automatically by the auth context
     } catch (error: any) {
+      console.log('Login error:', error);
       Alert.alert('Login Failed', error.message || 'An error occurred during login');
     }
+  };
+
+  const handleDemoLogin = () => {
+    setEmail('demo@ccn.com');
+    setPassword('demo123456');
+  };
+
+  const handleSignUp = () => {
+    router.push('/(auth)/register');
+  };
+
+  const handleForgotPassword = () => {
+    router.push('/(auth)/forgot-password');
   };
 
   return (
@@ -57,10 +79,11 @@ export const LoginScreen: React.FC = () => {
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
           <Text style={styles.title}>Welcome to CCN</Text>
-          <Text style={styles.subtitle}>Content Communication Network</Text>
+          <Text style={styles.subtitle}>Clinical Communication Network</Text>
         </View>
 
         <View style={styles.form}>
@@ -91,23 +114,39 @@ export const LoginScreen: React.FC = () => {
             style={styles.loginButton}
           />
 
+          <CustomButton
+            title="Try Demo Login"
+            onPress={handleDemoLogin}
+            variant="outline"
+            style={styles.demoButton}
+          />
+
+          <TouchableOpacity 
+            style={styles.forgotPasswordButton}
+            onPress={handleForgotPassword}
+          >
+            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+          </TouchableOpacity>
+
           <View style={styles.footer}>
             <Text style={styles.footerText}>
               Don't have an account?{' '}
-              <Text style={styles.linkText}>Sign Up</Text>
             </Text>
+            <TouchableOpacity onPress={handleSignUp}>
+              <Text style={styles.linkText}>Sign Up</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
         <View style={styles.demoInfo}>
           <Text style={styles.demoText}>Demo Credentials:</Text>
-          <Text style={styles.demoCredential}>Email: admin@test.com</Text>
-          <Text style={styles.demoCredential}>Password: admin123456</Text>
+          <Text style={styles.demoCredential}>Email: demo@ccn.com</Text>
+          <Text style={styles.demoCredential}>Password: demo123456</Text>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -116,11 +155,11 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flexGrow: 1,
-    padding: 24,
+    padding: 20,
+    justifyContent: 'center',
   },
   header: {
     alignItems: 'center',
-    marginTop: 60,
     marginBottom: 40,
   },
   title: {
@@ -131,43 +170,59 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 16,
-    color: '#6C757D',
+    color: '#666666',
     textAlign: 'center',
   },
   form: {
-    marginBottom: 32,
+    marginBottom: 30,
   },
   loginButton: {
     marginTop: 24,
   },
+  demoButton: {
+    marginTop: 12,
+  },
+  forgotPasswordButton: {
+    alignSelf: 'center',
+    marginTop: 16,
+  },
+  forgotPasswordText: {
+    fontSize: 14,
+    color: '#007AFF',
+    textAlign: 'center',
+  },
   footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
     marginTop: 24,
   },
   footerText: {
-    fontSize: 16,
-    color: '#6C757D',
+    fontSize: 14,
+    color: '#666666',
   },
   linkText: {
+    fontSize: 14,
     color: '#007AFF',
     fontWeight: '600',
   },
   demoInfo: {
-    backgroundColor: '#E9ECEF',
+    backgroundColor: '#E3F2FD',
     padding: 16,
     borderRadius: 8,
-    marginTop: 20,
+    borderLeftWidth: 4,
+    borderLeftColor: '#007AFF',
   },
   demoText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#495057',
+    color: '#1976D2',
     marginBottom: 8,
   },
   demoCredential: {
-    fontSize: 12,
-    color: '#6C757D',
-    marginBottom: 2,
+    fontSize: 13,
+    color: '#1976D2',
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
   },
 });
 

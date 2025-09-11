@@ -2,7 +2,7 @@ import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // API Configuration
-const API_BASE_URL = 'http://localhost:3000'; // Local development
+const API_BASE_URL = 'http://192.168.1.224:3000'; // Local development
 
 class ApiService {
   private api: AxiosInstance;
