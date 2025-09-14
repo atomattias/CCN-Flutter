@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Anonymization Service Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .upload-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px dashed #007AFF;
+            border-radius: 10px;
+            text-align: center;
+        }
+        input[type="file"] {
+            margin: 10px 0;
+        }
+        .image-container {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .image-box {
+            flex: 1;
+            min-width: 300px;
+            text-align: center;
+        }
+        .image-box img {
+            max-width: 100%;
+            height: 300px;
+            object-fit: cover;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+        }
+        .image-box h3 {
+            margin: 10px 0;
+            color: #333;
+        }
+        .controls {
+            margin: 20px 0;
+            text-align: center;
+        }
+        select, button {
+            padding: 10px 15px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #007AFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056CC;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007AFF;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔒 Face Anonymization Service Test</h1>
+        
+        <div class="upload-section">
+            <h3>Upload an Image with Faces</h3>
+            <input type="file" id="imageInput" accept="image/*">
+            <p>Select an image file (JPG, PNG, etc.)</p>
+        </div>
+
+        <div class="controls">
+            <label for="method">Anonymization Method:</label>
+            <select id="method">
+                <option value="blur">Blur</option>
+                <option value="pixelate">Pixelate</option>
+                <option value="solid">Solid Color</option>
+                <option value="hybrid" selected>Hybrid (Blur + Pixelate)</option>
+            </select>
+            
+            <label for="quality">Quality:</label>
+            <select id="quality">
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="extreme" selected>Extreme</option>
+            </select>
+            
+            <button id="anonymizeBtn" onclick="anonymizeImage()" disabled>Anonymize Faces</button>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Processing image...</p>
+        </div>
+
+        <div id="status"></div>
+
+        <div class="image-container" id="imageContainer" style="display: none;">
+            <div class="image-box">
+                <h3>Original Image</h3>
+                <img id="originalImage" alt="Original Image">
+            </div>
+            <div class="image-box">
+                <h3>Anonymized Image</h3>
+                <img id="anonymizedImage" alt="Anonymized Image">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://192.168.1.224:8000';
+        let originalImageData = null;
+
+        // Enable/disable anonymize button based on file selection
+        document.getElementById('imageInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const anonymizeBtn = document.getElementById('anonymizeBtn');
+            
+            if (file) {
+                anonymizeBtn.disabled = false;
+                showStatus('Image selected. Click "Anonymize Faces" to process.', 'info');
+                
+                // Display original image
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('originalImage').src = e.target.result;
+                    document.getElementById('imageContainer').style.display = 'flex';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                anonymizeBtn.disabled = true;
+                document.getElementById('imageContainer').style.display = 'none';
+            }
+        });
+
+        async function anonymizeImage() {
+            const fileInput = document.getElementById('imageInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showStatus('Please select an image first.', 'error');
+                return;
+            }
+
+            const method = document.getElementById('method').value;
+            const quality = document.getElementById('quality').value;
+            
+            showLoading(true);
+            showStatus('Processing image...', 'info');
+
+            try {
+                // Convert image to base64
+                const base64 = await fileToBase64(file);
+                console.log('Original image converted to base64, length:', base64.length);
+
+                // Call anonymization service
+                const response = await fetch(`${API_BASE_URL}/anonymize-json`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        image: base64,
+                        method: method,
+                        quality: quality
+                    })
+                });
+
+                console.log('Response status:', response.status, response.statusText);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Service error: ${response.status} ${errorText}`);
+                }
+
+                const result = await response.json();
+                console.log('Anonymization result:', result);
+
+                // Display anonymized image
+                const anonymizedDataUri = `data:image/jpeg;base64,${result.anonymized_image}`;
+                document.getElementById('anonymizedImage').src = anonymizedDataUri;
+
+                // Show success message
+                showStatus(
+                    `✅ Success! ${result.faces_detected} face(s) detected and anonymized. Processing time: ${result.processing_time.toFixed(2)}s`,
+                    'success'
+                );
+
+                // Log comparison
+                console.log('Original base64 length:', base64.length);
+                console.log('Anonymized base64 length:', result.anonymized_image.length);
+                console.log('Images are different:', base64 !== result.anonymized_image);
+
+            } catch (error) {
+                console.error('Anonymization error:', error);
+                showStatus(`❌ Error: ${error.message}`, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => {
+                    // Remove data:image/...;base64, prefix
+                    const base64 = reader.result.split(',')[1];
+                    resolve(base64);
+                };
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+            document.getElementById('anonymizeBtn').disabled = show;
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+
+        // Test service health on page load
+        window.addEventListener('load', async function() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/health`);
+                if (response.ok) {
+                    showStatus('✅ Anonymization service is running and ready!', 'success');
+                } else {
+                    showStatus('⚠️ Service responded but may have issues.', 'error');
+                }
+            } catch (error) {
+                showStatus('❌ Cannot connect to anonymization service. Please check if it\'s running.', 'error');
+            }
+        });
+    </script>
+</body>
+</html>
