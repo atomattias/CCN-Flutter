@@ -14,7 +14,6 @@ router.post(
   controller.sendDocumentFileHandler
 );
 router.post("/forward-file", controller.forwardFile);
-router.post("/anonymize-image", controller.anonymizeImage);
 router.put("/:Id", controller.sendDocumentFile, controller.updateFile);
 router.delete("/:id", controller.deleteFileById);
 

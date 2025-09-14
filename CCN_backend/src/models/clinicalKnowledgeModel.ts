@@ -10,6 +10,186 @@ export interface ClinicalImage {
   description?: string;
   uploadedAt: string;
   verificationStatus: 'pending' | 'verified' | 'rejected';
+  // Enhanced image anonymization tracking
+  anonymizationStatus: 'pending' | 'processing' | 'completed' | 'failed';
+  originalUri?: string;
+  anonymizedUri?: string;
+  facesDetected?: number;
+  anonymizationMethod?: string;
+  anonymizationConfidence?: number;
+  anonymizationTimestamp?: Date;
+}
+
+// PHI Detection Interface
+export interface PHIDetection {
+  type: string;
+  value: string;
+  start: number;
+  end: number;
+  confidence: number;
+  context: string;
+  field: string; // Which field this PHI was found in
+}
+
+// De-identification Metadata Interface
+export interface DeidentificationMetadata {
+  processedAt: Date;
+  method: string; // 'regex', 'nlp', 'comprehensive', 'hybrid'
+  confidence: number;
+  phiCount: number;
+  serviceVersion: string;
+  processingTime: number;
+}
+
+// Structured Clinical Data Interface
+export interface StructuredClinicalData {
+  // Demographics
+  demographics: {
+    age?: number;
+    gender?: 'male' | 'female' | 'other' | 'unknown';
+    ethnicity?: string;
+    race?: string;
+    language?: string;
+    maritalStatus?: string;
+  };
+  
+  // Vital Signs
+  vitalSigns: {
+    bloodPressure?: {
+      systolic: number;
+      diastolic: number;
+      unit: 'mmHg';
+      timestamp: Date;
+    };
+    heartRate?: {
+      value: number;
+      unit: 'bpm';
+      timestamp: Date;
+    };
+    temperature?: {
+      value: number;
+      unit: 'celsius' | 'fahrenheit';
+      timestamp: Date;
+    };
+    respiratoryRate?: {
+      value: number;
+      unit: 'breaths/min';
+      timestamp: Date;
+    };
+    oxygenSaturation?: {
+      value: number;
+      unit: '%';
+      timestamp: Date;
+    };
+    weight?: {
+      value: number;
+      unit: 'kg' | 'lbs';
+      timestamp: Date;
+    };
+    height?: {
+      value: number;
+      unit: 'cm' | 'inches';
+      timestamp: Date;
+    };
+  };
+  
+  // Laboratory Values
+  labValues: {
+    bloodTests?: {
+      hemoglobin?: number;
+      hematocrit?: number;
+      whiteBloodCells?: number;
+      platelets?: number;
+      glucose?: number;
+      creatinine?: number;
+      bun?: number;
+      sodium?: number;
+      potassium?: number;
+      chloride?: number;
+      co2?: number;
+      unit: string;
+      timestamp: Date;
+    };
+    urineTests?: {
+      protein?: string;
+      glucose?: string;
+      blood?: string;
+      leukocytes?: string;
+      nitrites?: string;
+      timestamp: Date;
+    };
+    otherTests?: Array<{
+      name: string;
+      value: string | number;
+      unit?: string;
+      referenceRange?: string;
+      timestamp: Date;
+    }>;
+  };
+  
+  // Medications
+  medications: Array<{
+    name: string;
+    dosage: string;
+    frequency: string;
+    route: string;
+    startDate?: Date;
+    endDate?: Date;
+    prescribedBy?: string;
+    indication?: string;
+  }>;
+  
+  // Allergies
+  allergies: Array<{
+    allergen: string;
+    reaction: string;
+    severity: 'mild' | 'moderate' | 'severe';
+    onsetDate?: Date;
+  }>;
+  
+  // Medical History
+  medicalHistory: {
+    pastIllnesses?: string[];
+    surgeries?: Array<{
+      procedure: string;
+      date: Date;
+      complications?: string;
+    }>;
+    hospitalizations?: Array<{
+      reason: string;
+      admissionDate: Date;
+      dischargeDate?: Date;
+      complications?: string;
+    }>;
+  };
+  
+  // Family History
+  familyHistory: Array<{
+    relationship: string;
+    condition: string;
+    ageOfOnset?: number;
+    notes?: string;
+  }>;
+  
+  // Social History
+  socialHistory: {
+    smoking?: {
+      status: 'never' | 'former' | 'current';
+      packYears?: number;
+      quitDate?: Date;
+    };
+    alcohol?: {
+      status: 'never' | 'former' | 'current';
+      drinksPerWeek?: number;
+    };
+    drugs?: {
+      status: 'never' | 'former' | 'current';
+      substances?: string[];
+    };
+    occupation?: string;
+    education?: string;
+    livingSituation?: string;
+  };
 }
 
 // AI Analysis Interface
@@ -61,7 +241,10 @@ export interface ClinicalQuestion extends Document {
   upvotes: number;
   downvotes: number;
   
-  // Enhanced clinical data
+  // Enhanced structured clinical data
+  structuredData?: StructuredClinicalData;
+  
+  // Legacy text fields (for backward compatibility)
   labValues?: string;
   vitalSigns?: string;
   medications?: string;
@@ -69,7 +252,40 @@ export interface ClinicalQuestion extends Document {
   familyHistory?: string;
   socialHistory?: string;
   physicalExam?: string;
+  
+  // Enhanced clinical images with anonymization
   clinicalImages?: ClinicalImage[];
+  
+  // De-identification tracking
+  deidentificationStatus: 'pending' | 'processing' | 'completed' | 'failed';
+  originalText?: {
+    title?: string;
+    description?: string;
+    patientSymptoms?: string;
+    patientHistory?: string;
+    labValues?: string;
+    vitalSigns?: string;
+    medications?: string;
+    allergies?: string;
+    familyHistory?: string;
+    socialHistory?: string;
+    physicalExam?: string;
+  };
+  deidentifiedText?: {
+    title?: string;
+    description?: string;
+    patientSymptoms?: string;
+    patientHistory?: string;
+    labValues?: string;
+    vitalSigns?: string;
+    medications?: string;
+    allergies?: string;
+    familyHistory?: string;
+    socialHistory?: string;
+    physicalExam?: string;
+  };
+  phiDetected?: PHIDetection[];
+  deidentificationMetadata?: DeidentificationMetadata;
   
   // AI Analysis
   aiAnalysis?: AIAnalysis;
@@ -293,6 +509,146 @@ const ClinicalQuestionSchema = new Schema<ClinicalQuestion>({
     trim: true,
     maxlength: 1000,
   },
+  // Enhanced structured clinical data
+  structuredData: {
+    demographics: {
+      age: Number,
+      gender: {
+        type: String,
+        enum: ['male', 'female', 'other', 'unknown']
+      },
+      ethnicity: String,
+      race: String,
+      language: String,
+      maritalStatus: String,
+    },
+    vitalSigns: {
+      bloodPressure: {
+        systolic: Number,
+        diastolic: Number,
+        unit: { type: String, default: 'mmHg' },
+        timestamp: Date,
+      },
+      heartRate: {
+        value: Number,
+        unit: { type: String, default: 'bpm' },
+        timestamp: Date,
+      },
+      temperature: {
+        value: Number,
+        unit: { type: String, enum: ['celsius', 'fahrenheit'] },
+        timestamp: Date,
+      },
+      respiratoryRate: {
+        value: Number,
+        unit: { type: String, default: 'breaths/min' },
+        timestamp: Date,
+      },
+      oxygenSaturation: {
+        value: Number,
+        unit: { type: String, default: '%' },
+        timestamp: Date,
+      },
+      weight: {
+        value: Number,
+        unit: { type: String, enum: ['kg', 'lbs'] },
+        timestamp: Date,
+      },
+      height: {
+        value: Number,
+        unit: { type: String, enum: ['cm', 'inches'] },
+        timestamp: Date,
+      },
+    },
+    labValues: {
+      bloodTests: {
+        hemoglobin: Number,
+        hematocrit: Number,
+        whiteBloodCells: Number,
+        platelets: Number,
+        glucose: Number,
+        creatinine: Number,
+        bun: Number,
+        sodium: Number,
+        potassium: Number,
+        chloride: Number,
+        co2: Number,
+        unit: String,
+        timestamp: Date,
+      },
+      urineTests: {
+        protein: String,
+        glucose: String,
+        blood: String,
+        leukocytes: String,
+        nitrites: String,
+        timestamp: Date,
+      },
+      otherTests: [{
+        name: String,
+        value: Schema.Types.Mixed,
+        unit: String,
+        referenceRange: String,
+        timestamp: Date,
+      }],
+    },
+    medications: [{
+      name: String,
+      dosage: String,
+      frequency: String,
+      route: String,
+      startDate: Date,
+      endDate: Date,
+      prescribedBy: String,
+      indication: String,
+    }],
+    allergies: [{
+      allergen: String,
+      reaction: String,
+      severity: { type: String, enum: ['mild', 'moderate', 'severe'] },
+      onsetDate: Date,
+    }],
+    medicalHistory: {
+      pastIllnesses: [String],
+      surgeries: [{
+        procedure: String,
+        date: Date,
+        complications: String,
+      }],
+      hospitalizations: [{
+        reason: String,
+        admissionDate: Date,
+        dischargeDate: Date,
+        complications: String,
+      }],
+    },
+    familyHistory: [{
+      relationship: String,
+      condition: String,
+      ageOfOnset: Number,
+      notes: String,
+    }],
+    socialHistory: {
+      smoking: {
+        status: { type: String, enum: ['never', 'former', 'current'] },
+        packYears: Number,
+        quitDate: Date,
+      },
+      alcohol: {
+        status: { type: String, enum: ['never', 'former', 'current'] },
+        drinksPerWeek: Number,
+      },
+      drugs: {
+        status: { type: String, enum: ['never', 'former', 'current'] },
+        substances: [String],
+      },
+      occupation: String,
+      education: String,
+      livingSituation: String,
+    },
+  },
+  
+  // Enhanced clinical images with anonymization
   clinicalImages: [{
     id: String,
     name: String,
@@ -306,7 +662,69 @@ const ClinicalQuestionSchema = new Schema<ClinicalQuestion>({
       enum: ['pending', 'verified', 'rejected'],
       default: 'pending',
     },
+    // Enhanced image anonymization tracking
+    anonymizationStatus: {
+      type: String,
+      enum: ['pending', 'processing', 'completed', 'failed'],
+      default: 'pending',
+    },
+    originalUri: String,
+    anonymizedUri: String,
+    facesDetected: Number,
+    anonymizationMethod: String,
+    anonymizationConfidence: Number,
+    anonymizationTimestamp: Date,
   }],
+  
+  // De-identification tracking
+  deidentificationStatus: {
+    type: String,
+    enum: ['pending', 'processing', 'completed', 'failed'],
+    default: 'pending',
+  },
+  originalText: {
+    title: String,
+    description: String,
+    patientSymptoms: String,
+    patientHistory: String,
+    labValues: String,
+    vitalSigns: String,
+    medications: String,
+    allergies: String,
+    familyHistory: String,
+    socialHistory: String,
+    physicalExam: String,
+  },
+  deidentifiedText: {
+    title: String,
+    description: String,
+    patientSymptoms: String,
+    patientHistory: String,
+    labValues: String,
+    vitalSigns: String,
+    medications: String,
+    allergies: String,
+    familyHistory: String,
+    socialHistory: String,
+    physicalExam: String,
+  },
+  phiDetected: [{
+    type: String,
+    value: String,
+    start: Number,
+    end: Number,
+    confidence: Number,
+    context: String,
+    field: String,
+  }],
+  deidentificationMetadata: {
+    processedAt: Date,
+    method: String,
+    confidence: Number,
+    phiCount: Number,
+    serviceVersion: String,
+    processingTime: Number,
+  },
   
   // AI Analysis
   aiAnalysis: {
@@ -473,7 +891,12 @@ const ClinicalVoteSchema = new Schema<ClinicalVote>({
 
 // Indexes for better query performance
 ClinicalQuestionSchema.index({ title: 'text', description: 'text', patientSymptoms: 'text' });
+ClinicalQuestionSchema.index({ 'deidentifiedText.title': 'text', 'deidentifiedText.description': 'text', 'deidentifiedText.patientSymptoms': 'text' });
 ClinicalQuestionSchema.index({ specialty: 1, urgency: 1 });
+ClinicalQuestionSchema.index({ deidentificationStatus: 1 });
+ClinicalQuestionSchema.index({ 'structuredData.demographics.age': 1, 'structuredData.demographics.gender': 1 });
+ClinicalQuestionSchema.index({ 'structuredData.vitalSigns.bloodPressure.systolic': 1, 'structuredData.vitalSigns.bloodPressure.diastolic': 1 });
+ClinicalQuestionSchema.index({ createdAt: -1 });
 ClinicalQuestionSchema.index({ authorId: 1, createdAt: -1 });
 ClinicalQuestionSchema.index({ tags: 1 });
 ClinicalQuestionSchema.index({ status: 1, createdAt: -1 });
