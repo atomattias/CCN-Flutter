@@ -65,6 +65,10 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+# Increase the maximum request size to handle larger images
+from fastapi.middleware.gzip import GZipMiddleware
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,

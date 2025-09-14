@@ -40,7 +40,7 @@ else
         
         # Run the service
         echo "🏃 Starting service on port 8000..."
-        python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+        python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --limit-request-body-size 10485760
     else
         echo "❌ Failed to install dependencies"
         exit 1
