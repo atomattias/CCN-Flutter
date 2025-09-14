@@ -9,6 +9,7 @@ import { faceAnonymizationService, FaceAnonymizationResult } from '../src/servic
 import { resizeImageForAnonymization } from '../src/utils/imageUtils';
 
 export default function SecondOpinionScreen() {
+  const [selectedChannel, setSelectedChannel] = useState<string>('');
   const [caseDescription, setCaseDescription] = useState('');
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [urgency, setUrgency] = useState<'low' | 'medium' | 'high'>('medium');
@@ -19,6 +20,19 @@ export default function SecondOpinionScreen() {
   const [isProcessingDescription, setIsProcessingDescription] = useState(false);
   const [anonymizedImages, setAnonymizedImages] = useState<string[]>([]);
   const [isProcessingImages, setIsProcessingImages] = useState(false);
+
+  // Available channels for second opinion requests
+  const availableChannels = [
+    { id: 'general', name: 'General Discussion', description: 'General medical consultations' },
+    { id: 'cardiology', name: 'Cardiology', description: 'Heart and cardiovascular conditions' },
+    { id: 'neurology', name: 'Neurology', description: 'Brain and nervous system disorders' },
+    { id: 'emergency', name: 'Emergency Cases', description: 'Urgent medical situations' },
+    { id: 'research', name: 'Research & Studies', description: 'Clinical research discussions' },
+    { id: 'training', name: 'Training & Education', description: 'Medical education and training' },
+    { id: 'dermatology', name: 'Dermatology', description: 'Skin conditions and treatments' },
+    { id: 'radiology', name: 'Radiology', description: 'Medical imaging and diagnostics' },
+    { id: 'pathology', name: 'Pathology', description: 'Disease diagnosis and analysis' }
+  ];
 
   // Process description when privacy protection is enabled and text changes
   useEffect(() => {
@@ -153,6 +167,11 @@ export default function SecondOpinionScreen() {
   };
 
   const handleSubmitRequest = async () => {
+    if (!selectedChannel) {
+      Alert.alert('Error', 'Please select a channel for your second opinion request');
+      return;
+    }
+
     if (!caseDescription.trim()) {
       Alert.alert('Error', 'Please provide a case description');
       return;
@@ -175,9 +194,12 @@ export default function SecondOpinionScreen() {
       privacyInfo.push('• Images have been anonymized');
     }
     
+    const selectedChannelInfo = availableChannels.find(ch => ch.id === selectedChannel);
+    const channelName = selectedChannelInfo ? selectedChannelInfo.name : 'Selected Channel';
+    
     const message = privacyInfo.length > 0 
-      ? `Your request has been sent to available specialists with privacy protection applied:\n\n${privacyInfo.join('\n')}\n\nYou will be notified when responses are received.`
-      : 'Your request has been sent to available specialists. You will be notified when responses are received.';
+      ? `Your request has been sent to the ${channelName} channel with privacy protection applied:\n\n${privacyInfo.join('\n')}\n\nYou will be notified when responses are received.`
+      : `Your request has been sent to the ${channelName} channel. You will be notified when responses are received.`;
 
     Alert.alert(
       'Second Opinion Request Submitted',
@@ -343,6 +365,50 @@ export default function SecondOpinionScreen() {
           </TouchableOpacity>
           <Text style={styles.title}>Request Second Opinion</Text>
           <View style={styles.placeholder} />
+        </View>
+
+        {/* Channel Selection */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Select Channel</Text>
+          <Text style={styles.sectionSubtitle}>
+            Choose the appropriate channel for your second opinion request
+          </Text>
+          
+          <TouchableOpacity 
+            style={styles.channelDropdown}
+            onPress={() => {
+              Alert.alert(
+                'Select Channel',
+                'Choose the appropriate channel for your second opinion request',
+                availableChannels.map((channel) => ({
+                  text: channel.name,
+                  onPress: () => setSelectedChannel(channel.id)
+                })).concat([{ text: 'Cancel', style: 'cancel' }])
+              );
+            }}
+          >
+            <View style={styles.channelDropdownContent}>
+              <Ionicons name="people" size={20} color="#007AFF" />
+              <Text style={[
+                styles.channelDropdownText,
+                !selectedChannel && styles.channelDropdownPlaceholder
+              ]}>
+                {selectedChannel 
+                  ? availableChannels.find(ch => ch.id === selectedChannel)?.name 
+                  : 'Select a channel...'
+                }
+              </Text>
+            </View>
+            <Ionicons name="chevron-down" size={20} color="#8E8E93" />
+          </TouchableOpacity>
+          
+          {selectedChannel && (
+            <View style={styles.selectedChannelInfo}>
+              <Text style={styles.selectedChannelDescription}>
+                {availableChannels.find(ch => ch.id === selectedChannel)?.description}
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Case Description */}
@@ -820,5 +886,42 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#1976D2',
     lineHeight: 20,
+  },
+  channelDropdown: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
+    borderRadius: 8,
+    backgroundColor: '#F2F2F7',
+  },
+  channelDropdownContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  channelDropdownText: {
+    fontSize: 16,
+    color: '#1C1C1E',
+    marginLeft: 8,
+    flex: 1,
+  },
+  channelDropdownPlaceholder: {
+    color: '#8E8E93',
+  },
+  selectedChannelInfo: {
+    marginTop: 12,
+    padding: 12,
+    backgroundColor: '#E3F2FD',
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#007AFF',
+  },
+  selectedChannelDescription: {
+    fontSize: 14,
+    color: '#1976D2',
+    lineHeight: 18,
   },
 });
