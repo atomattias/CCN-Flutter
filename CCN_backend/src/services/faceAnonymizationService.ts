@@ -22,9 +22,23 @@ class FaceAnonymizationService {
   private baseUrl: string;
   private timeout: number;
 
-  constructor(baseUrl: string = 'http://192.168.1.224:8000', timeout: number = 30000) {
+  constructor(baseUrl: string = 'http://localhost:8000', timeout: number = 30000) {
     this.baseUrl = baseUrl;
     this.timeout = timeout;
+  }
+
+  /**
+   * Strip data URL prefix from base64 image string
+   */
+  private stripDataUrlPrefix(imageData: string): string {
+    // Remove data URL prefix (e.g., "data:image/jpeg;base64,")
+    if (imageData.startsWith('data:')) {
+      const base64Index = imageData.indexOf(',');
+      if (base64Index !== -1) {
+        return imageData.substring(base64Index + 1);
+      }
+    }
+    return imageData;
   }
 
   /**
@@ -34,7 +48,6 @@ class FaceAnonymizationService {
     try {
       const response = await fetch(`${this.baseUrl}/health`, {
         method: 'GET',
-        // timeout: this.timeout, // Removed - not supported in fetch
       });
 
       if (response.ok) {
@@ -53,17 +66,19 @@ class FaceAnonymizationService {
    */
   async anonymizeFaces(request: FaceAnonymizationRequest): Promise<FaceAnonymizationResult> {
     try {
+      // Strip data URL prefix if present
+      const cleanImageData = this.stripDataUrlPrefix(request.image);
+      
       const response = await fetch(`${this.baseUrl}/anonymize-json`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          image: request.image,
+          image: cleanImageData,
           method: request.method || 'blur',
           quality: request.quality || 'high',
         }),
-        // timeout: this.timeout, // Removed - not supported in fetch
       });
 
       if (!response.ok) {
@@ -142,7 +157,6 @@ class FaceAnonymizationService {
     try {
       const response = await fetch(`${this.baseUrl}/health`, {
         method: 'GET',
-        // timeout: this.timeout, // Removed - not supported in fetch
       });
 
       if (!response.ok) {

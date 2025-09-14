@@ -17,7 +17,8 @@ import errorHandler from "errorhandler";
 import { ROLE } from "./models/userModel";
 import fileRoute from "./routes/fileRoutes";
 import aiModelRoutes from "./routes/aiModelRoutes";
-// import clinicalKnowledgeRoutes from "./routes/clinicalKnowledgeRoutes"; // Removed - file deleted
+import textDeidentificationRoutes from "./routes/textDeidentificationRoutes";
+import faceAnonymizationRoutes from "./routes/faceAnonymizationRoutes";
 
 // instances
 const app: Application = express();
@@ -68,7 +69,8 @@ app.use("/api/file", fileRoute);
 app.use("/api/chat", middlewares.auth, chatRouter.router);
 app.use("/api/meeting", middlewares.auth, meetingRouter.router);
 app.use("/api/ai", aiModelRoutes);
-// app.use("/api/clinical", clinicalKnowledgeRoutes); // Removed - route deleted
+app.use("/api/text-deidentification", middlewares.auth, textDeidentificationRoutes);
+app.use("/api/face-anonymization", middlewares.auth, faceAnonymizationRoutes);
 io.use(middlewares.socket);
 
 io.on("connection", async (socket) => {

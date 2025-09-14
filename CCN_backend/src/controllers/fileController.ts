@@ -185,6 +185,55 @@ export class FileController extends BaseController {
     }
   };
 
+  // Face anonymization proxy endpoint
+  anonymizeImage = async (req: Request, res: Response) => {
+    try {
+      const { image, method = 'pixelate', quality = 'medium' } = req.body;
+      const userId = this.getUser(req);
+
+      if (!userId) {
+        return res.status(401).send({ error: "Unauthorized" });
+      }
+
+      if (!image) {
+        return res.status(400).send({ error: "Image data is required" });
+      }
+
+      console.log(`Proxying face anonymization request for user: ${userId}`);
+
+      // Forward the request to the face anonymization service
+      const faceAnonymizationUrl = 'http://192.168.1.224:8000/anonymize-json';
+      
+      const response = await fetch(faceAnonymizationUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          image,
+          method,
+          quality
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Face anonymization service error: ${response.status} ${errorText}`);
+        return res.status(response.status).send({ 
+          error: `Face anonymization failed: ${response.status} ${response.statusText}` 
+        });
+      }
+
+      const result = await response.json();
+      console.log(`Face anonymization completed for user: ${userId}`);
+      
+      res.status(200).json(result);
+    } catch (error) {
+      console.error('Face anonymization proxy error:', error);
+      res.status(500).send({ error: "Internal Server Error" });
+    }
+  };
+
   private determineFileType(fileName: string): string {
     // Determine the file type based on the file name
     const fileExtension = path.extname(fileName).toLowerCase();
