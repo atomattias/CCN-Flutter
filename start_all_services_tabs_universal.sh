@@ -159,36 +159,9 @@ else
 fi
 
 # =============================================================================
-# 2. CCN BACKEND API (Start first as other services depend on it)
+# 2. TEXT DE-IDENTIFICATION SERVICE
 # =============================================================================
-print_status "2/6 Starting CCN Backend API in new tab..."
-
-cd "/home/mattias/Thesis/Material/CCN report/CCN Repos/CCN_backend"
-
-# Check if node_modules exists
-if [ ! -d "node_modules" ]; then
-    print_status "Installing backend dependencies..."
-    npm install
-fi
-
-# Start the backend in a new tab
-open_new_tab "CCN Backend API" "
-    echo '🔧 Starting CCN Backend API...'
-    cd '/home/mattias/Thesis/Material/CCN report/CCN Repos/CCN_backend'
-    npm run devStart
-"
-
-if wait_for_service "http://localhost:3000/api/auth/health" "CCN Backend API"; then
-    print_success "CCN Backend API started successfully"
-else
-    print_error "CCN Backend API failed to start"
-    exit 1
-fi
-
-# =============================================================================
-# 3. TEXT DE-IDENTIFICATION SERVICE
-# =============================================================================
-print_status "3/6 Starting Text De-identification Service in new tab..."
+print_status "2/6 Starting Text De-identification Service in new tab..."
 
 cd "/home/mattias/Thesis/Material/CCN report/CCN Repos/CCN_TextDeidentification"
 
@@ -217,9 +190,9 @@ else
 fi
 
 # =============================================================================
-# 4. FACE ANONYMIZATION SERVICE
+# 3. FACE ANONYMIZATION SERVICE
 # =============================================================================
-print_status "4/6 Starting Face Anonymization Service in new tab..."
+print_status "3/6 Starting Face Anonymization Service in new tab..."
 
 cd "/home/mattias/Thesis/Material/CCN report/CCN Repos/CCN_FaceAnonymization"
 
@@ -243,6 +216,33 @@ if wait_for_service "http://localhost:8000/health" "Face Anonymization Service";
     print_success "Face Anonymization Service started successfully"
 else
     print_error "Face Anonymization Service failed to start"
+    exit 1
+fi
+
+# =============================================================================
+# 4. CCN BACKEND API
+# =============================================================================
+print_status "4/6 Starting CCN Backend API in new tab..."
+
+cd "/home/mattias/Thesis/Material/CCN report/CCN Repos/CCN_backend"
+
+# Check if node_modules exists
+if [ ! -d "node_modules" ]; then
+    print_status "Installing backend dependencies..."
+    npm install
+fi
+
+# Start the backend in a new tab
+open_new_tab "CCN Backend API" "
+    echo '🔧 Starting CCN Backend API...'
+    cd '/home/mattias/Thesis/Material/CCN report/CCN Repos/CCN_backend'
+    npm run devStart
+"
+
+if wait_for_service "http://localhost:3000" "CCN Backend API"; then
+    print_success "CCN Backend API started successfully"
+else
+    print_error "CCN Backend API failed to start"
     exit 1
 fi
 
@@ -300,7 +300,7 @@ open_new_tab "React Native Mobile App" "
     echo '📱 Or press i to open iOS simulator'
     echo ''
     cd '/home/mattias/Thesis/Material/CCN report/CCN Repos/CCN_Mobile_ReactNative'
-    npx expo start --host tunnel --port 8081
+    npx expo start --host lan --port 8081
 "
 
 # Wait a bit for Expo to start
