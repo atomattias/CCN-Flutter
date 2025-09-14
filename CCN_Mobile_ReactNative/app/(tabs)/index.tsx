@@ -1,18 +1,21 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { router } from 'expo-router';
 
+interface Channel {
+  id: string;
+  name: string;
+  type: 'general' | 'specific';
+  members: number;
+  description?: string;
+}
+
 export default function HomeScreen() {
   const { user, logout } = useAuth();
-  
+
   console.log('HomeScreen: Rendering home screen for user:', user?.email);
 
   const handleLogout = async () => {
@@ -24,219 +27,294 @@ export default function HomeScreen() {
     }
   };
 
+  const handleCreateCase = () => {
+    router.push('/CreateCaseScreen');
+  };
+
+
+
+
+
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Welcome to CCN</Text>
-        <Text style={styles.subtitle}>Clinical Communication Network</Text>
-      </View>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.userInfo}>
+            <View style={styles.avatar}>
+              <Ionicons name="medical" size={20} color="#007AFF" />
+            </View>
+            <View style={styles.userDetails}>
+              <Text style={styles.welcomeText}>Welcome back, Dr. {user?.email?.split('@')[0]}!</Text>
+              <Text style={styles.userRole}>{user?.role} • Verified Medical Practitioner</Text>
+            </View>
+          </View>
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+            <Ionicons name="log-out-outline" size={18} color="#FF3B30" />
+          </TouchableOpacity>
+        </View>
 
-      <View style={styles.userInfo}>
-        <View style={styles.userCard}>
-          <Ionicons name="person-circle" size={60} color="#007AFF" />
-          <View style={styles.userDetails}>
-            <Text style={styles.userName}>{user?.fullname || 'User'}</Text>
-            <Text style={styles.userEmail}>{user?.email}</Text>
-            <Text style={styles.userRole}>{user?.role}</Text>
+        {/* Quick Actions */}
+        <View style={styles.quickActions}>
+          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <View style={styles.actionsGrid}>
+            <TouchableOpacity 
+              style={[styles.actionCard, styles.primaryAction]} 
+              onPress={handleCreateCase}
+            >
+              <Ionicons name="add-circle-outline" size={24} color="#FFFFFF" />
+              <Text style={[styles.actionText, { color: '#FFFFFF' }]}>Create Case</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.actionCard} 
+              onPress={() => router.push('/(tabs)/channels')}
+            >
+              <Ionicons name="chatbubbles-outline" size={24} color="#007AFF" />
+              <Text style={styles.actionText}>Browse Channels</Text>
+            </TouchableOpacity>
           </View>
         </View>
-      </View>
 
-      <View style={styles.quickActions}>
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
-        
-        <TouchableOpacity style={styles.actionCard}>
-          <Ionicons name="chatbubbles" size={24} color="#007AFF" />
-          <Text style={styles.actionText}>View Channels</Text>
-          <Ionicons name="chevron-forward" size={20} color="#8E8E93" />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.actionCard}>
-          <Ionicons name="medical" size={24} color="#007AFF" />
-          <Text style={styles.actionText}>Clinical QA</Text>
-          <Ionicons name="chevron-forward" size={20} color="#8E8E93" />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.actionCard}>
-          <Ionicons name="document-text" size={24} color="#007AFF" />
-          <Text style={styles.actionText}>Recent Messages</Text>
-          <Ionicons name="chevron-forward" size={20} color="#8E8E93" />
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.stats}>
-        <Text style={styles.sectionTitle}>Today's Activity</Text>
-        
-        <View style={styles.statsGrid}>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>12</Text>
-            <Text style={styles.statLabel}>Messages</Text>
-          </View>
+        {/* Main Features Grid */}
+        <View style={styles.featuresGrid}>
+          <TouchableOpacity 
+            style={styles.featureCard}
+            onPress={() => router.push('/(tabs)/channels')}
+          >
+            <Ionicons name="chatbubbles-outline" size={32} color="#007AFF" />
+            <Text style={styles.featureTitle}>Channels</Text>
+            <Text style={styles.featureSubtitle}>Medical discussions</Text>
+          </TouchableOpacity>
           
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>3</Text>
-            <Text style={styles.statLabel}>Channels</Text>
-          </View>
+          <TouchableOpacity 
+            style={styles.featureCard}
+            onPress={() => Alert.alert('Messages', 'View your direct messages and communications')}
+          >
+            <Ionicons name="mail-outline" size={32} color="#34C759" />
+            <Text style={styles.featureTitle}>Messages</Text>
+            <Text style={styles.featureSubtitle}>Direct communications</Text>
+          </TouchableOpacity>
           
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>5</Text>
-            <Text style={styles.statLabel}>QA Reviews</Text>
+          <TouchableOpacity 
+            style={styles.featureCard}
+            onPress={() => Alert.alert('Files', 'File management feature coming soon')}
+          >
+            <Ionicons name="document-outline" size={32} color="#FF9500" />
+            <Text style={styles.featureTitle}>Files</Text>
+            <Text style={styles.featureSubtitle}>Document sharing</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.featureCard}
+            onPress={() => Alert.alert('Subscriptions', 'Subscription management feature coming soon')}
+          >
+            <Ionicons name="card-outline" size={32} color="#AF52DE" />
+            <Text style={styles.featureTitle}>Subscriptions</Text>
+            <Text style={styles.featureSubtitle}>Manage access</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Recent Activity */}
+        <View style={styles.activitySection}>
+          <Text style={styles.sectionTitle}>Recent Activity</Text>
+          <View style={styles.activityList}>
+            <View style={styles.activityItem}>
+              <Ionicons name="chatbubble-outline" size={20} color="#007AFF" />
+              <View style={styles.activityContent}>
+                <Text style={styles.activityText}>New message in Cardiology Specialists</Text>
+                <Text style={styles.activityTime}>2 hours ago</Text>
+              </View>
+            </View>
+            <View style={styles.activityItem}>
+              <Ionicons name="mail-outline" size={20} color="#34C759" />
+              <View style={styles.activityContent}>
+                <Text style={styles.activityText}>New direct message from Dr. Smith</Text>
+                <Text style={styles.activityTime}>4 hours ago</Text>
+              </View>
+            </View>
+            <View style={styles.activityItem}>
+              <Ionicons name="document-outline" size={20} color="#FF9500" />
+              <View style={styles.activityContent}>
+                <Text style={styles.activityText}>New file shared in Emergency Medicine</Text>
+                <Text style={styles.activityTime}>1 day ago</Text>
+              </View>
+            </View>
           </View>
         </View>
-      </View>
 
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Ionicons name="log-out-outline" size={20} color="#FF3B30" />
-        <Text style={styles.logoutText}>Logout</Text>
-      </TouchableOpacity>
-    </ScrollView>
+
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#F2F2F7',
+  },
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#F2F2F7',
   },
   header: {
-    padding: 20,
-    paddingTop: 40,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 24,
+    paddingTop: 20,
+    paddingBottom: 20,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E5E5EA',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#007AFF',
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666666',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    marginBottom: 8,
+    minHeight: 80,
   },
   userInfo: {
-    padding: 20,
-  },
-  userCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  userDetails: {
-    marginLeft: 16,
     flex: 1,
   },
-  userName: {
-    fontSize: 18,
+  avatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#F2F2F7',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+    borderWidth: 2,
+    borderColor: '#007AFF',
+  },
+  userDetails: {
+    flex: 1,
+  },
+  welcomeText: {
+    fontSize: 14,
     fontWeight: '600',
     color: '#1C1C1E',
-    marginBottom: 4,
-  },
-  userEmail: {
-    fontSize: 14,
-    color: '#666666',
-    marginBottom: 2,
   },
   userRole: {
     fontSize: 12,
-    color: '#007AFF',
-    fontWeight: '500',
-    textTransform: 'uppercase',
+    color: '#8E8E93',
+    marginTop: 2,
+  },
+  logoutButton: {
+    padding: 6,
+    borderRadius: 6,
+    backgroundColor: '#FF3B3010',
   },
   quickActions: {
-    padding: 20,
-    paddingTop: 0,
+    padding: 16,
+    paddingBottom: 8,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
     color: '#1C1C1E',
-    marginBottom: 16,
+    marginBottom: 12,
+  },
+  actionsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
   },
   actionCard: {
+    width: '48%',
     backgroundColor: '#FFFFFF',
+    padding: 12,
     borderRadius: 12,
-    padding: 16,
+    alignItems: 'center',
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  primaryAction: {
+    backgroundColor: '#007AFF',
+    width: '100%',
+  },
+  actionText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1C1C1E',
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  featuresGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    padding: 16,
+    paddingTop: 0,
+    paddingBottom: 8,
+    justifyContent: 'space-between',
+  },
+  featureCard: {
+    backgroundColor: '#FFFFFF',
+    width: '48%',
+    padding: 16,
+    borderRadius: 12,
     alignItems: 'center',
     marginBottom: 12,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  actionText: {
-    fontSize: 16,
+  featureTitle: {
+    fontSize: 14,
+    fontWeight: '600',
     color: '#1C1C1E',
-    marginLeft: 12,
-    flex: 1,
-  },
-  stats: {
-    padding: 20,
-    paddingTop: 0,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  statCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 20,
-    alignItems: 'center',
-    flex: 1,
-    marginHorizontal: 4,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#007AFF',
+    marginTop: 8,
     marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#666666',
     textAlign: 'center',
   },
-  logoutButton: {
+  featureSubtitle: {
+    fontSize: 12,
+    color: '#8E8E93',
+    textAlign: 'center',
+  },
+  activitySection: {
+    padding: 16,
+    paddingTop: 0,
+    paddingBottom: 16,
+  },
+  activityList: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  activityItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    margin: 20,
-    marginTop: 10,
-    borderWidth: 1,
-    borderColor: '#FF3B30',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F2F2F7',
   },
-  logoutText: {
-    fontSize: 16,
-    color: '#FF3B30',
-    fontWeight: '600',
-    marginLeft: 8,
+  activityContent: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  activityText: {
+    fontSize: 14,
+    color: '#1C1C1E',
+    marginBottom: 4,
+  },
+  activityTime: {
+    fontSize: 12,
+    color: '#8E8E93',
   },
 });

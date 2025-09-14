@@ -18,9 +18,9 @@ export default function TabsLayout() {
           backgroundColor: '#FFFFFF',
           borderTopWidth: 1,
           borderTopColor: '#E5E5EA',
-          paddingBottom: 5,
-          paddingTop: 5,
-          height: 60,
+          paddingBottom: 25,
+          paddingTop: 8,
+          height: 80,
         },
         tabBarLabelStyle: {
           fontSize: 12,
@@ -43,15 +43,6 @@ export default function TabsLayout() {
           title: 'Channels',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="chatbubbles-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="clinical"
-        options={{
-          title: 'Clinical',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="medical-outline" size={size} color={color} />
           ),
         }}
       />
