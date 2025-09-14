@@ -34,7 +34,7 @@ class FaceAnonymizationService {
     try {
       const response = await fetch(`${this.baseUrl}/health`, {
         method: 'GET',
-        timeout: this.timeout,
+        // timeout: this.timeout, // Removed - not supported in fetch
       });
 
       if (response.ok) {
@@ -63,7 +63,7 @@ class FaceAnonymizationService {
           method: request.method || 'blur',
           quality: request.quality || 'high',
         }),
-        timeout: this.timeout,
+        // timeout: this.timeout, // Removed - not supported in fetch
       });
 
       if (!response.ok) {
@@ -74,7 +74,7 @@ class FaceAnonymizationService {
       return result;
     } catch (error) {
       console.error('Face anonymization error:', error);
-      throw new Error(`Face anonymization failed: ${error.message}`);
+      throw new Error(`Face anonymization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -142,7 +142,7 @@ class FaceAnonymizationService {
     try {
       const response = await fetch(`${this.baseUrl}/health`, {
         method: 'GET',
-        timeout: this.timeout,
+        // timeout: this.timeout, // Removed - not supported in fetch
       });
 
       if (!response.ok) {
@@ -153,7 +153,7 @@ class FaceAnonymizationService {
       return result;
     } catch (error) {
       console.error('Get face anonymization service info error:', error);
-      throw new Error(`Failed to get service info: ${error.message}`);
+      throw new Error(`Failed to get service info: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 }
