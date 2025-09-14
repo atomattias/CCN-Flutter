@@ -143,11 +143,6 @@ export default function ChannelsScreen() {
                       <Ionicons name="people-outline" size={16} color="#8E8E93" />
                       <Text style={styles.memberCount}>{channel.memberCount} members</Text>
                     </View>
-                    <View style={[styles.typeBadge, { backgroundColor: channel.type === 'general' ? '#007AFF' : '#34C759' }]}>
-                      <Text style={styles.typeText}>
-                        {channel.type === 'general' ? 'General' : 'Specialist'}
-                      </Text>
-                    </View>
                   </View>
                 </View>
               </View>
@@ -279,16 +274,6 @@ const styles = StyleSheet.create({
     color: '#8E8E93',
     marginLeft: 4,
   },
-  typeBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  typeText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#FFFFFF',
-  },
   channelActions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
@@ -305,7 +290,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#007AFF',
   },
   leaveButton: {
-    backgroundColor: '#FF3B30',
+    backgroundColor: '#34C759',
   },
   actionButtonText: {
     fontSize: 14,
