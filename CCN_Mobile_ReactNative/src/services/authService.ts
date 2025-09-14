@@ -95,6 +95,17 @@ class AuthService {
     }
   }
 
+  // Get stored token
+  async getToken(): Promise<string | null> {
+    try {
+      const token = await AsyncStorage.getItem('authToken');
+      return token;
+    } catch (error) {
+      console.error('Error getting stored token:', error);
+      return null;
+    }
+  }
+
   // Check if user is authenticated
   async isAuthenticated(): Promise<boolean> {
     try {

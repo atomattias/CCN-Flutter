@@ -110,8 +110,14 @@ export default function ChannelsScreen() {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Text style={styles.title}>Channels</Text>
-          <Text style={styles.subtitle}>Join medical discussion channels</Text>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={24} color="#007AFF" />
+          </TouchableOpacity>
+          <View style={styles.headerContent}>
+            <Text style={styles.title}>Channels</Text>
+            <Text style={styles.subtitle}>Join medical discussion channels</Text>
+          </View>
+          <View style={styles.placeholder} />
         </View>
 
         <View style={styles.channelsList}>
@@ -193,19 +199,32 @@ const styles = StyleSheet.create({
     backgroundColor: '#F2F2F7',
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     padding: 20,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E5E5EA',
   },
+  backButton: {
+    padding: 8,
+  },
+  headerContent: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  placeholder: {
+    width: 40,
+  },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
+    fontSize: 18,
+    fontWeight: '600',
     color: '#1C1C1E',
     marginBottom: 4,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#8E8E93',
   },
   channelsList: {
