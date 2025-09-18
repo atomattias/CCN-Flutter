@@ -5,8 +5,11 @@ Comprehensive PHI detection and de-identification for clinical text
 
 import re
 import logging
-from typing import List, Dict, Any, Optional, Tuple
+import hashlib
+import asyncio
+from typing import List, Dict, Any, Optional, Tuple, AsyncIterator
 from datetime import datetime
+from functools import lru_cache
 import spacy
 from presidio_analyzer import AnalyzerEngine
 from presidio_anonymizer import AnonymizerEngine
@@ -38,6 +41,8 @@ class TextDeidentifier:
         self.anonymizer_engine = None
         self.phi_patterns = {}
         self.medical_terms = set()
+        self._cache = {}  # Simple in-memory cache
+        self._cache_max_size = 1000
         
     async def initialize(self):
         """Initialize the de-identification service"""
@@ -92,7 +97,7 @@ class TextDeidentifier:
     def _load_phi_patterns(self):
         """Load comprehensive PHI detection patterns"""
         self.phi_patterns = {
-            # Names (various formats)
+            # Names (various formats) - More precise patterns
             'names': [
                 r'\b[A-Z][a-z]+ [A-Z][a-z]+\b',  # First Last
                 r'\b[A-Z][a-z]+, [A-Z][a-z]+\b',  # Last, First
@@ -148,22 +153,113 @@ class TextDeidentifier:
                 r'\bHeight:?\s*\d+\s*(?:ft|feet|in|inches|cm)\b',  # Height
                 r'\bInsurance:?\s*[A-Za-z0-9\s]+\b',  # Insurance
                 r'\bPolicy:?\s*[A-Za-z0-9\s]+\b',  # Policy number
+            ],
+            
+            # Clinical identifiers
+            'clinical_identifiers': [
+                r'\b(?:patient|pt|subject)\s*#?\s*\d+\b',
+                r'\b(?:case|study)\s*#?\s*[A-Z0-9-]+\b',
+                r'\b(?:specimen|sample)\s*#?\s*\d+\b',
+                r'\b(?:chart|record)\s*#?\s*[A-Z0-9-]+\b',
+                r'\b(?:visit|encounter)\s*#?\s*\d+\b',
+                r'\b(?:admission|discharge)\s*#?\s*\d+\b',
+                r'\b(?:lab|test)\s*#?\s*[A-Z0-9-]+\b',
+                r'\b(?:order|req)\s*#?\s*\d+\b'
+            ],
+            
+            # Medical dates and times
+            'medical_dates': [
+                r'\b(?:admission|admit):?\s*\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b',
+                r'\b(?:discharge|disch):?\s*\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b',
+                r'\b(?:born|birth)\s+(?:on\s+)?\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b',
+                r'\b(?:age|aged)\s+\d{1,3}\s*(?:years?|yrs?|months?|days?)\b',
+                r'\b(?:procedure|surgery)\s+(?:on\s+)?\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b'
+            ],
+            
+            # Location-based PHI
+            'location_phi': [
+                r'\b(?:room|bed)\s*#?\s*\d+[A-Z]?\b',
+                r'\b(?:floor|level)\s*\d+\b',
+                r'\b(?:unit|ward)\s*[A-Z0-9]+\b',
+                r'\b(?:department|dept)\s*[A-Z0-9]+\b',
+                r'\b(?:clinic|center|facility)\s*[A-Z0-9]+\b',
+                r'\b(?:building|bldg)\s*[A-Z0-9]+\b'
+            ],
+            
+            # Insurance and financial info
+            'insurance_info': [
+                r'\b(?:insurance|ins)\s*#?\s*[A-Z0-9-]+\b',
+                r'\b(?:policy|member)\s*#?\s*[A-Z0-9-]+\b',
+                r'\b(?:group|plan)\s*#?\s*[A-Z0-9-]+\b',
+                r'\b[A-Z]{2,4}\d{6,12}\b',  # Insurance ID patterns
+                r'\b(?:copay|deductible):?\s*\$\d+(?:\.\d{2})?\b'
+            ],
+            
+            # Medical measurements and vitals
+            'medical_measurements': [
+                r'\b(?:weight|wt):?\s*\d+(?:\.\d+)?\s*(?:lbs?|kg|pounds?|kilograms?)\b',
+                r'\b(?:height|ht):?\s*\d+(?:\.\d+)?\s*(?:ft|feet|in|inches|cm|meters?)\b',
+                r'\b(?:BP|blood\s+pressure):?\s*\d+/\d+\b',
+                r'\b(?:HR|heart\s+rate):?\s*\d+\s*(?:bpm|beats?/min)\b',
+                r'\b(?:temp|temperature):?\s*\d+(?:\.\d+)?\s*(?:°?F|°?C|fahrenheit|celsius)\b',
+                r'\b(?:RR|resp\s+rate):?\s*\d+\s*(?:/min|breaths?/min)\b',
+                r'\b(?:O2|oxygen)\s+(?:sat|saturation):?\s*\d+%\b'
             ]
         }
         logger.info("✅ PHI patterns loaded successfully")
     
     def _load_medical_terms(self):
-        """Load medical terms to preserve during de-identification"""
+        """Load comprehensive medical terms to preserve during de-identification"""
         self.medical_terms = {
-            # Common medical terms that should be preserved
+            # Common medical terms
             'symptoms', 'diagnosis', 'treatment', 'medication', 'allergy',
             'blood pressure', 'heart rate', 'temperature', 'pulse',
             'chest pain', 'headache', 'fever', 'nausea', 'vomiting',
             'diabetes', 'hypertension', 'asthma', 'pneumonia',
             'x-ray', 'ct scan', 'mri', 'ultrasound', 'lab results',
-            'emergency', 'urgent', 'critical', 'stable', 'improving'
+            'emergency', 'urgent', 'critical', 'stable', 'improving',
+            
+            # Cardiology
+            'ecg', 'ekg', 'myocardial infarction', 'mi', 'cabg', 'stent',
+            'angina', 'arrhythmia', 'tachycardia', 'bradycardia',
+            'echocardiogram', 'stress test', 'catheterization',
+            
+            # Oncology
+            'tumor', 'metastasis', 'chemotherapy', 'radiation', 'oncology',
+            'carcinoma', 'sarcoma', 'lymphoma', 'leukemia', 'biopsy',
+            'remission', 'prognosis', 'staging',
+            
+            # Neurology
+            'seizure', 'epilepsy', 'stroke', 'tia', 'migraine',
+            'alzheimer', 'parkinson', 'dementia', 'concussion',
+            'eeg', 'lumbar puncture', 'neurological exam',
+            
+            # Orthopedics
+            'fracture', 'dislocation', 'arthritis', 'osteoporosis',
+            'joint replacement', 'arthroscopy', 'cast', 'splint',
+            'physical therapy', 'rehabilitation',
+            
+            # Emergency Medicine
+            'trauma', 'shock', 'hemorrhage', 'cardiac arrest',
+            'cpr', 'defibrillation', 'intubation', 'ventilation',
+            'triage', 'resuscitation',
+            
+            # Laboratory and Diagnostics
+            'cbc', 'bmp', 'lft', 'troponin', 'bnp', 'creatinine',
+            'glucose', 'hemoglobin', 'white blood cell', 'platelet',
+            'culture', 'sensitivity', 'pathology', 'histology',
+            
+            # Medications and Treatments
+            'antibiotic', 'analgesic', 'anticoagulant', 'insulin',
+            'surgery', 'procedure', 'anesthesia', 'sedation',
+            'intravenous', 'oral', 'topical', 'injection',
+            
+            # Medical Equipment
+            'ventilator', 'monitor', 'defibrillator', 'pulse oximeter',
+            'blood pressure cuff', 'stethoscope', 'thermometer',
+            'wheelchair', 'crutches', 'walker'
         }
-        logger.info("✅ Medical terms loaded successfully")
+        logger.info("✅ Enhanced medical terms loaded successfully")
     
     async def deidentify_text(
         self,
@@ -174,7 +270,7 @@ class TextDeidentifier:
         custom_patterns: Optional[List[str]] = None
     ) -> Dict[str, Any]:
         """
-        De-identify clinical text by removing PHI
+        De-identify clinical text by removing PHI with caching support
         
         Args:
             text: Input text to de-identify
@@ -188,6 +284,13 @@ class TextDeidentifier:
         """
         if not self.is_loaded:
             raise Exception("Text deidentifier not initialized")
+        
+        # Check cache first
+        text_hash = self._get_text_hash(text)
+        cached_result = self._get_cached_result(text_hash, method, sensitivity)
+        if cached_result:
+            logger.debug(f"Cache hit for text hash: {text_hash[:8]}...")
+            return cached_result
         
         try:
             # Detect PHI first
@@ -208,12 +311,17 @@ class TextDeidentifier:
             # Calculate confidence score
             confidence_score = self._calculate_confidence(phi_detected, method)
             
-            return {
+            result = {
                 'deidentified_text': deidentified_text,
                 'phi_detected': phi_detected,
                 'phi_count': len(phi_detected),
                 'confidence_score': confidence_score
             }
+            
+            # Cache the result
+            self._cache_result(text_hash, method, sensitivity, result)
+            
+            return result
             
         except Exception as e:
             logger.error(f"De-identification failed: {e}")
@@ -293,13 +401,23 @@ class TextDeidentifier:
             for pattern in patterns:
                 matches = re.finditer(pattern, text, re.IGNORECASE)
                 for match in matches:
+                    matched_text = match.group()
+                    
                     # Skip if it's a medical term
-                    if self._is_medical_term(match.group()):
+                    if self._is_medical_term(matched_text):
+                        continue
+                    
+                    # Skip if it's a common word (for names)
+                    if phi_type == 'names' and self._is_common_word(matched_text):
+                        continue
+                    
+                    # Skip if it contains common words (for multi-word patterns)
+                    if phi_type == 'names' and any(self._is_common_word(word) for word in matched_text.split()):
                         continue
                     
                     phi_detected.append({
                         'type': phi_type,
-                        'value': match.group(),
+                        'value': matched_text,
                         'start': match.start(),
                         'end': match.end(),
                         'confidence': 0.8,  # Default confidence for regex
@@ -394,8 +512,8 @@ class TextDeidentifier:
     def _get_replacement(self, phi_type: str, value: str, preserve_context: bool) -> str:
         """Get appropriate replacement for PHI based on type"""
         replacements = {
-            'names': '[PATIENT NAME]',
-            'PERSON': '[PATIENT NAME]',
+            'names': '[NAME]',
+            'PERSON': '[NAME]',
             'dates': '[DATE]',
             'DATE': '[DATE]',
             'ids': '[ID NUMBER]',
@@ -432,6 +550,63 @@ class TextDeidentifier:
         """Check if text is a medical term that should be preserved"""
         return text.lower() in self.medical_terms
     
+    def _is_common_word(self, text: str) -> bool:
+        """Check if text is a common word that shouldn't be considered PHI"""
+        common_words = {
+            'and', 'or', 'with', 'of', 'in', 'at', 'on', 'for', 'to', 'from', 'by',
+            'has', 'have', 'had', 'is', 'are', 'was', 'were', 'will', 'would', 'could',
+            'should', 'may', 'might', 'can', 'must', 'shall', 'do', 'does', 'did',
+            'get', 'got', 'go', 'went', 'come', 'came', 'see', 'saw', 'know', 'knew',
+            'think', 'thought', 'say', 'said', 'tell', 'told', 'give', 'gave', 'take',
+            'took', 'make', 'made', 'find', 'found', 'look', 'looked', 'feel', 'felt',
+            'seem', 'seemed', 'become', 'became', 'leave', 'left', 'put', 'keep', 'kept',
+            'let', 'begin', 'began', 'start', 'started', 'turn', 'turned', 'move', 'moved',
+            'live', 'lived', 'work', 'worked', 'play', 'played', 'run', 'ran', 'walk',
+            'walked', 'drive', 'drove', 'fly', 'flew', 'fall', 'fell', 'grow', 'grew',
+            'bring', 'brought', 'buy', 'bought', 'sell', 'sold', 'pay', 'paid', 'cost',
+            'spend', 'spent', 'build', 'built', 'break', 'broke', 'cut', 'hit', 'hurt',
+            'catch', 'caught', 'throw', 'threw', 'hold', 'held', 'carry', 'carried',
+            'push', 'pushed', 'pull', 'pulled', 'open', 'opened', 'close', 'closed',
+            'stop', 'stopped', 'continue', 'continued', 'try', 'tried', 'use', 'used',
+            'help', 'helped', 'show', 'showed', 'learn', 'learned', 'change', 'changed',
+            'include', 'included', 'follow', 'followed', 'create', 'created', 'develop',
+            'developed', 'provide', 'provided', 'require', 'required', 'allow', 'allowed',
+            'support', 'supported', 'serve', 'served', 'appear', 'appeared', 'remain',
+            'remained', 'increase', 'increased', 'decrease', 'decreased', 'improve',
+            'improved', 'reduce', 'reduced', 'raise', 'raised', 'lower', 'lowered',
+            'rise', 'rose', 'drop', 'dropped', 'gain', 'gained', 'lose', 'lost', 'win',
+            'won', 'beat', 'fail', 'failed', 'succeed', 'succeeded', 'achieve', 'achieved',
+            'reach', 'reached', 'arrive', 'arrived', 'return', 'returned', 'travel',
+            'traveled', 'visit', 'visited', 'stay', 'stayed', 'wait', 'waited', 'expect',
+            'expected', 'hope', 'hoped', 'wish', 'wished', 'dream', 'dreamed', 'imagine',
+            'imagined', 'believe', 'believed', 'trust', 'trusted', 'doubt', 'doubted',
+            'wonder', 'wondered', 'realize', 'realized', 'understand', 'understood',
+            'remember', 'remembered', 'forget', 'forgot', 'recognize', 'recognized',
+            'notice', 'noticed', 'observe', 'observed', 'watch', 'watched', 'listen',
+            'listened', 'hear', 'heard', 'smell', 'smelled', 'taste', 'tasted', 'touch',
+            'touched', 'sound', 'sounded', 'father', 'mother', 'brother', 'sister',
+            'son', 'daughter', 'parent', 'child', 'family', 'friend', 'patient', 'doctor',
+            'nurse', 'hospital', 'clinic', 'medical', 'health', 'care', 'treatment',
+            'therapy', 'medicine', 'drug', 'medication', 'surgery', 'operation',
+            'procedure', 'test', 'examination', 'diagnosis', 'condition', 'disease',
+            'illness', 'symptom', 'pain', 'ache', 'fever', 'temperature', 'blood',
+            'pressure', 'heart', 'lung', 'brain', 'head', 'chest', 'back', 'leg',
+            'arm', 'hand', 'foot', 'eye', 'ear', 'nose', 'mouth', 'throat', 'stomach',
+            'abdomen', 'liver', 'kidney', 'bone', 'muscle', 'skin', 'hair', 'tooth',
+            'teeth', 'gum', 'tongue', 'lip', 'cheek', 'chin', 'forehead', 'neck',
+            'shoulder', 'elbow', 'wrist', 'finger', 'thumb', 'nail', 'knee', 'ankle',
+            'toe', 'heel', 'spine', 'rib', 'hip', 'waist', 'belly', 'chest', 'breast',
+            'lung', 'heart', 'stomach', 'liver', 'kidney', 'bladder', 'intestine',
+            'colon', 'rectum', 'anus', 'penis', 'vagina', 'testicle', 'ovary', 'uterus',
+            'prostate', 'thyroid', 'adrenal', 'pancreas', 'spleen', 'gallbladder',
+            'appendix', 'tonsil', 'lymph', 'vein', 'artery', 'nerve', 'tendon',
+            'ligament', 'cartilage', 'joint', 'bone', 'marrow', 'plasma', 'cell',
+            'tissue', 'organ', 'system', 'body', 'human', 'person', 'individual',
+            'man', 'woman', 'boy', 'girl', 'baby', 'infant', 'child', 'teenager',
+            'adult', 'elderly', 'senior', 'young', 'old', 'middle', 'aged'
+        }
+        return text.lower() in common_words
+    
     def _deduplicate_phi(self, phi_detected: List[Dict]) -> List[Dict]:
         """Remove duplicate PHI detections"""
         seen = set()
@@ -464,4 +639,142 @@ class TextDeidentifier:
         avg_phi_confidence = sum(phi['confidence'] for phi in phi_detected) / len(phi_detected)
         
         return (base_confidence + avg_phi_confidence) / 2
+    
+    def _get_text_hash(self, text: str) -> str:
+        """Generate hash for text caching"""
+        return hashlib.md5(text.encode()).hexdigest()
+    
+    def _get_cached_result(self, text_hash: str, method: str, sensitivity: str) -> Optional[Dict[str, Any]]:
+        """Get cached de-identification result"""
+        cache_key = f"{text_hash}_{method}_{sensitivity}"
+        return self._cache.get(cache_key)
+    
+    def _cache_result(self, text_hash: str, method: str, sensitivity: str, result: Dict[str, Any]):
+        """Cache de-identification result"""
+        if len(self._cache) >= self._cache_max_size:
+            # Remove oldest entries (simple FIFO)
+            oldest_key = next(iter(self._cache))
+            del self._cache[oldest_key]
+        
+        cache_key = f"{text_hash}_{method}_{sensitivity}"
+        self._cache[cache_key] = result
+    
+    async def deidentify_batch(
+        self, 
+        texts: List[str], 
+        method: str = "comprehensive",
+        sensitivity: str = "high",
+        preserve_context: bool = True,
+        custom_patterns: Optional[List[str]] = None,
+        max_concurrent: int = 5
+    ) -> List[Dict[str, Any]]:
+        """
+        Process multiple texts concurrently for better performance
+        
+        Args:
+            texts: List of texts to de-identify
+            method: De-identification method
+            sensitivity: Sensitivity level
+            preserve_context: Whether to preserve medical context
+            custom_patterns: Additional custom patterns
+            max_concurrent: Maximum concurrent processing tasks
+            
+        Returns:
+            List of de-identification results
+        """
+        if not self.is_loaded:
+            raise Exception("Text deidentifier not initialized")
+        
+        # Create semaphore to limit concurrent processing
+        semaphore = asyncio.Semaphore(max_concurrent)
+        
+        async def process_single_text(text: str) -> Dict[str, Any]:
+            async with semaphore:
+                return await self.deidentify_text(
+                    text=text,
+                    method=method,
+                    sensitivity=sensitivity,
+                    preserve_context=preserve_context,
+                    custom_patterns=custom_patterns
+                )
+        
+        # Process all texts concurrently
+        tasks = [process_single_text(text) for text in texts]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        # Handle any exceptions
+        processed_results = []
+        for i, result in enumerate(results):
+            if isinstance(result, Exception):
+                logger.error(f"Error processing text {i}: {result}")
+                processed_results.append({
+                    'error': str(result),
+                    'original_text': texts[i],
+                    'deidentified_text': texts[i],  # Return original on error
+                    'phi_detected': [],
+                    'phi_count': 0,
+                    'confidence_score': 0.0
+                })
+            else:
+                processed_results.append(result)
+        
+        return processed_results
+    
+    async def deidentify_stream(
+        self, 
+        text_stream: AsyncIterator[str],
+        method: str = "comprehensive",
+        sensitivity: str = "high",
+        preserve_context: bool = True,
+        custom_patterns: Optional[List[str]] = None
+    ) -> AsyncIterator[Dict[str, Any]]:
+        """
+        Process text streams in real-time
+        
+        Args:
+            text_stream: Async iterator of texts
+            method: De-identification method
+            sensitivity: Sensitivity level
+            preserve_context: Whether to preserve medical context
+            custom_patterns: Additional custom patterns
+            
+        Yields:
+            De-identification results as they become available
+        """
+        if not self.is_loaded:
+            raise Exception("Text deidentifier not initialized")
+        
+        async for text in text_stream:
+            try:
+                result = await self.deidentify_text(
+                    text=text,
+                    method=method,
+                    sensitivity=sensitivity,
+                    preserve_context=preserve_context,
+                    custom_patterns=custom_patterns
+                )
+                yield result
+            except Exception as e:
+                logger.error(f"Error processing stream text: {e}")
+                yield {
+                    'error': str(e),
+                    'original_text': text,
+                    'deidentified_text': text,
+                    'phi_detected': [],
+                    'phi_count': 0,
+                    'confidence_score': 0.0
+                }
+    
+    def get_cache_stats(self) -> Dict[str, Any]:
+        """Get cache statistics"""
+        return {
+            'cache_size': len(self._cache),
+            'max_cache_size': self._cache_max_size,
+            'cache_hit_ratio': getattr(self, '_cache_hits', 0) / max(getattr(self, '_cache_requests', 1), 1)
+        }
+    
+    def clear_cache(self):
+        """Clear the de-identification cache"""
+        self._cache.clear()
+        logger.info("Cache cleared")
 
