@@ -53,7 +53,7 @@ class TextDeidentificationService {
   private baseUrl: string;
   private timeout: number;
 
-  constructor(baseUrl: string = 'http://192.168.1.224:8001', timeout: number = 30000) {
+  constructor(baseUrl: string = 'http://localhost:8001', timeout: number = 30000) {
     this.baseUrl = baseUrl;
     this.timeout = timeout;
   }
