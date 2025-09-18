@@ -14,12 +14,13 @@ export default function SecondOpinionScreen() {
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [urgency, setUrgency] = useState<'low' | 'medium' | 'high'>('medium');
   const [isDeidentifying, setIsDeidentifying] = useState(false);
-  const [enableDescriptionPrivacy, setEnableDescriptionPrivacy] = useState(true);
+  const [enableDescriptionPrivacy, setEnableDescriptionPrivacy] = useState(false);
   const [enableImagePrivacy, setEnableImagePrivacy] = useState(true);
   const [deidentifiedDescription, setDeidentifiedDescription] = useState('');
   const [isProcessingDescription, setIsProcessingDescription] = useState(false);
   const [anonymizedImages, setAnonymizedImages] = useState<string[]>([]);
   const [isProcessingImages, setIsProcessingImages] = useState(false);
+  
 
   // Available channels for second opinion requests
   const availableChannels = [
@@ -34,18 +35,6 @@ export default function SecondOpinionScreen() {
     { id: 'pathology', name: 'Pathology', description: 'Disease diagnosis and analysis' }
   ];
 
-  // Process description when privacy protection is enabled and text changes
-  useEffect(() => {
-    if (enableDescriptionPrivacy && caseDescription.trim()) {
-      const timeoutId = setTimeout(() => {
-        processCaseDescription();
-      }, 1000); // Debounce for 1 second
-
-      return () => clearTimeout(timeoutId);
-    } else if (!enableDescriptionPrivacy) {
-      setDeidentifiedDescription('');
-    }
-  }, [caseDescription, enableDescriptionPrivacy]);
 
   // Process images when privacy protection is enabled and images change
   useEffect(() => {
@@ -56,28 +45,37 @@ export default function SecondOpinionScreen() {
     }
   }, [selectedImages, enableImagePrivacy]);
 
-  const processCaseDescription = async () => {
-    if (!caseDescription.trim()) {
+
+  const processCaseDescription = async (text: string = caseDescription) => {
+    console.log('🔍 processCaseDescription called with text:', text.substring(0, 50) + '...');
+    
+    if (!text.trim()) {
+      console.log('❌ No text to process, clearing deidentified description');
       setDeidentifiedDescription('');
       return;
     }
 
+    console.log('🚀 Starting text de-identification...');
     setIsProcessingDescription(true);
     try {
       const result = await textDeidentificationService.deidentifyText({
-        text: caseDescription,
+        text: text,
         method: 'comprehensive',
         sensitivity: 'high',
         preserve_context: true
       });
+      console.log('✅ De-identification successful:', result.deidentified_text.substring(0, 50) + '...');
       setDeidentifiedDescription(result.deidentified_text);
+      console.log('📱 Deidentified description state updated, length:', result.deidentified_text.length);
     } catch (error) {
-      console.error('Failed to process case description:', error);
-      setDeidentifiedDescription(caseDescription); // Fallback to original
+      console.error('❌ Failed to process case description:', error);
+      setDeidentifiedDescription(text); // Fallback to original
     } finally {
       setIsProcessingDescription(false);
     }
   };
+
+
 
   const processImages = async () => {
     if (selectedImages.length === 0) {
@@ -153,9 +151,18 @@ export default function SecondOpinionScreen() {
   };
 
   const handleDescriptionPrivacyToggle = async (enabled: boolean) => {
+    console.log('🔧 Privacy toggle changed to:', enabled);
+    console.log('📝 Current case description length:', caseDescription.length);
+    
     setEnableDescriptionPrivacy(enabled);
     if (enabled && caseDescription.trim()) {
+      console.log('🚀 Privacy enabled, processing text...');
+      // Process existing text when privacy is enabled
       await processCaseDescription();
+    } else {
+      console.log('🔓 Privacy disabled, clearing deidentified text');
+      // Clear deidentified text when privacy is disabled
+      setDeidentifiedDescription('');
     }
   };
 
@@ -421,23 +428,42 @@ export default function SecondOpinionScreen() {
               <Text style={styles.processingText}>Processing for privacy protection...</Text>
             </View>
           ) : (
-            <TextInput
-              style={styles.textInput}
-              placeholder="Describe the clinical case, symptoms, history, and any specific questions you have..."
-              value={enableDescriptionPrivacy && deidentifiedDescription ? deidentifiedDescription : caseDescription}
-              onChangeText={(text) => {
-                // Always update the original description
-                setCaseDescription(text);
-                // If privacy protection is off, clear the deidentified version
-                if (!enableDescriptionPrivacy) {
-                  setDeidentifiedDescription('');
-                }
-              }}
-              multiline
-              numberOfLines={8}
-              textAlignVertical="top"
-            />
+            <View>
+              <TextInput
+                style={[
+                  styles.textInput,
+                  enableDescriptionPrivacy && deidentifiedDescription && styles.deidentifiedTextInput
+                ]}
+                placeholder="Describe the clinical case, symptoms, history, and any specific questions you have..."
+                value={enableDescriptionPrivacy && deidentifiedDescription ? deidentifiedDescription : caseDescription}
+                onChangeText={(text) => {
+                  console.log('✏️ Text input changed, length:', text.length);
+                  // Only allow editing when privacy is off or no deidentified text exists
+                  if (!enableDescriptionPrivacy || !deidentifiedDescription) {
+                    // Always update the original description
+                    setCaseDescription(text);
+                    // Clear deidentified version when user is typing
+                    setDeidentifiedDescription('');
+                  }
+                }}
+                multiline
+                numberOfLines={8}
+                textAlignVertical="top"
+                editable={!enableDescriptionPrivacy || !deidentifiedDescription}
+              />
+              
+              
+              {enableDescriptionPrivacy && deidentifiedDescription && (
+                <View style={styles.deidentifiedNotice}>
+                  <Ionicons name="shield-checkmark" size={16} color="#007AFF" />
+                  <Text style={styles.deidentifiedNoticeText}>
+                    Text is de-identified. Toggle privacy protection OFF to edit.
+                  </Text>
+                </View>
+              )}
+            </View>
           )}
+          
           
           {enableDescriptionPrivacy && deidentifiedDescription && (
             <View style={styles.privacyNotice}>
@@ -452,14 +478,29 @@ export default function SecondOpinionScreen() {
           <View style={styles.privacyToggleSection}>
             <View style={styles.privacyToggleRow}>
               <View style={styles.privacyToggleInfo}>
-                <Ionicons name="shield-checkmark" size={20} color="#34C759" />
-                <Text style={styles.privacyToggleTitle}>Privacy Protection</Text>
+                <Ionicons 
+                  name={caseDescription.trim() ? "shield-checkmark" : "shield-outline"} 
+                  size={20} 
+                  color={caseDescription.trim() ? "#34C759" : "#999"} 
+                />
+                <Text style={[styles.privacyToggleTitle, !caseDescription.trim() && styles.disabledText]}>
+                  Privacy Protection
+                </Text>
               </View>
               <TouchableOpacity
-                style={[styles.sectionToggle, enableDescriptionPrivacy && styles.sectionToggleActive]}
-                onPress={() => handleDescriptionPrivacyToggle(!enableDescriptionPrivacy)}
+                style={[
+                  styles.sectionToggle, 
+                  enableDescriptionPrivacy && styles.sectionToggleActive,
+                  !caseDescription.trim() && styles.disabledToggle
+                ]}
+                onPress={() => caseDescription.trim() && handleDescriptionPrivacyToggle(!enableDescriptionPrivacy)}
+                disabled={!caseDescription.trim()}
               >
-                <View style={[styles.sectionToggleThumb, enableDescriptionPrivacy && styles.sectionToggleThumbActive]} />
+                <View style={[
+                  styles.sectionToggleThumb, 
+                  enableDescriptionPrivacy && styles.sectionToggleThumbActive,
+                  !caseDescription.trim() && styles.disabledToggleThumb
+                ]} />
               </TouchableOpacity>
             </View>
           </View>
@@ -743,6 +784,39 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#1976D2',
     lineHeight: 18,
+  },
+  disabledText: {
+    color: '#999',
+  },
+  privacyToggleSubtitle: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 2,
+  },
+  disabledToggle: {
+    opacity: 0.5,
+  },
+  disabledToggleThumb: {
+    backgroundColor: '#CCC',
+  },
+  deidentifiedTextInput: {
+    backgroundColor: '#F0F8FF',
+    borderColor: '#007AFF',
+    borderWidth: 2,
+  },
+  deidentifiedNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E3F2FD',
+    padding: 8,
+    borderRadius: 6,
+    marginTop: 8,
+  },
+  deidentifiedNoticeText: {
+    fontSize: 12,
+    color: '#1976D2',
+    marginLeft: 6,
+    flex: 1,
   },
   imagePrivacyOverlay: {
     position: 'absolute',

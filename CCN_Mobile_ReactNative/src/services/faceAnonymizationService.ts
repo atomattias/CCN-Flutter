@@ -70,9 +70,29 @@ class FaceAnonymizationService {
       console.log('Response headers:', Object.fromEntries(response.headers.entries()));
       
       if (!response.ok) {
-        const errorText = await response.text();
-        console.log('Error response body:', errorText);
-        throw new Error(`Face anonymization failed: ${response.status} ${response.statusText} - ${errorText}`);
+        let errorMessage = `Face anonymization failed: ${response.status} ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          if (errorData.error) {
+            errorMessage = typeof errorData.error === 'string' ? errorData.error : JSON.stringify(errorData.error);
+          } else if (errorData.message) {
+            errorMessage = errorData.message;
+          }
+          
+          // Check if it's a token expiration error
+          if (errorData.error && typeof errorData.error === 'object' && errorData.error.name === 'TokenExpiredError') {
+            console.log('Token expired, attempting to refresh...');
+            // Clear the expired token
+            await authService.logout();
+            throw new Error('Your session has expired. Please log in again.');
+          }
+        } catch (parseError) {
+          // If we can't parse the error response, use the status text
+          console.warn('Could not parse error response:', parseError);
+          const errorText = await response.text();
+          errorMessage = `${errorMessage} - ${errorText}`;
+        }
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();
@@ -80,6 +100,17 @@ class FaceAnonymizationService {
       return result;
     } catch (error) {
       console.error('Face anonymization error:', error);
+      
+      // Handle specific error cases
+      if (error instanceof Error) {
+        if (error.message.includes('session has expired') || error.message.includes('TokenExpiredError')) {
+          throw new Error('Your session has expired. Please log in again.');
+        }
+        if (error.message.includes('No authentication token')) {
+          throw new Error('Please log in to use this feature.');
+        }
+      }
+      
       throw new Error(`Face anonymization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }

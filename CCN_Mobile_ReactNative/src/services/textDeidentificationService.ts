@@ -55,6 +55,10 @@ class TextDeidentificationService {
     try {
       const token = await authService.getToken();
       
+      if (!token) {
+        throw new Error('No authentication token found. Please log in again.');
+      }
+      
       const response = await fetch(`${this.baseUrl}/deidentify`, {
         method: 'POST',
         headers: {
@@ -71,8 +75,27 @@ class TextDeidentificationService {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          if (errorData.error) {
+            errorMessage = typeof errorData.error === 'string' ? errorData.error : JSON.stringify(errorData.error);
+          } else if (errorData.message) {
+            errorMessage = errorData.message;
+          }
+          
+          // Check if it's a token expiration error
+          if (errorData.error && typeof errorData.error === 'object' && errorData.error.name === 'TokenExpiredError') {
+            console.log('Token expired, attempting to refresh...');
+            // Clear the expired token
+            await authService.logout();
+            throw new Error('Your session has expired. Please log in again.');
+          }
+        } catch (parseError) {
+          // If we can't parse the error response, use the status text
+          console.warn('Could not parse error response:', parseError);
+        }
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();
@@ -84,6 +107,17 @@ class TextDeidentificationService {
       return result.data;
     } catch (error) {
       console.error('Text de-identification error:', error);
+      
+      // Handle specific error cases
+      if (error instanceof Error) {
+        if (error.message.includes('session has expired') || error.message.includes('TokenExpiredError')) {
+          throw new Error('Your session has expired. Please log in again.');
+        }
+        if (error.message.includes('No authentication token')) {
+          throw new Error('Please log in to use this feature.');
+        }
+      }
+      
       throw new Error(`Text de-identification failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
@@ -94,6 +128,10 @@ class TextDeidentificationService {
   async detectPHI(request: PHIDetectionRequest): Promise<PHIDetectionResult> {
     try {
       const token = await authService.getToken();
+      
+      if (!token) {
+        throw new Error('No authentication token found. Please log in again.');
+      }
       
       const response = await fetch(`${this.baseUrl}/detect`, {
         method: 'POST',
@@ -109,8 +147,27 @@ class TextDeidentificationService {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          if (errorData.error) {
+            errorMessage = typeof errorData.error === 'string' ? errorData.error : JSON.stringify(errorData.error);
+          } else if (errorData.message) {
+            errorMessage = errorData.message;
+          }
+          
+          // Check if it's a token expiration error
+          if (errorData.error && typeof errorData.error === 'object' && errorData.error.name === 'TokenExpiredError') {
+            console.log('Token expired, attempting to refresh...');
+            // Clear the expired token
+            await authService.logout();
+            throw new Error('Your session has expired. Please log in again.');
+          }
+        } catch (parseError) {
+          // If we can't parse the error response, use the status text
+          console.warn('Could not parse error response:', parseError);
+        }
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();
@@ -122,6 +179,17 @@ class TextDeidentificationService {
       return result.data;
     } catch (error) {
       console.error('PHI detection error:', error);
+      
+      // Handle specific error cases
+      if (error instanceof Error) {
+        if (error.message.includes('session has expired') || error.message.includes('TokenExpiredError')) {
+          throw new Error('Your session has expired. Please log in again.');
+        }
+        if (error.message.includes('No authentication token')) {
+          throw new Error('Please log in to use this feature.');
+        }
+      }
+      
       throw new Error(`PHI detection failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
@@ -154,3 +222,12 @@ class TextDeidentificationService {
 }
 
 export const textDeidentificationService = new TextDeidentificationService();
+
+
+
+
+
+
+
+
+
