@@ -209,7 +209,7 @@ async def anonymize_image_json(request: ImageRequest):
         )
     
     # Validate quality
-    valid_qualities = ["low", "medium", "high"]
+    valid_qualities = ["low", "medium", "high", "extreme"]
     if request.quality not in valid_qualities:
         raise HTTPException(
             status_code=400, 

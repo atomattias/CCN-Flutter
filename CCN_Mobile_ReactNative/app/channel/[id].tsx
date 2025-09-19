@@ -119,7 +119,7 @@ export default function ChannelDetailScreen() {
         },
         body: JSON.stringify({
           image: base64,
-          method: 'blur',
+          method: 'solid',
           quality: 'high',
         }),
       });

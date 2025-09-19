@@ -5,7 +5,7 @@
 
 export interface FaceAnonymizationRequest {
   image: string; // base64 encoded image
-  method?: 'blur' | 'pixelate' | 'hybrid';
+  method?: 'blur' | 'pixelate' | 'hybrid' | 'solid';
   quality?: 'low' | 'medium' | 'high' | 'extreme';
 }
 
@@ -22,7 +22,7 @@ class FaceAnonymizationService {
   private baseUrl: string;
   private timeout: number;
 
-  constructor(baseUrl: string = 'http://localhost:8000', timeout: number = 30000) {
+  constructor(baseUrl: string = 'http://192.168.1.224:8000', timeout: number = 30000) {
     this.baseUrl = baseUrl;
     this.timeout = timeout;
   }
@@ -69,6 +69,13 @@ class FaceAnonymizationService {
       // Strip data URL prefix if present
       const cleanImageData = this.stripDataUrlPrefix(request.image);
       
+      console.log('=== Face Anonymization Request ===');
+      console.log('URL:', `${this.baseUrl}/anonymize-json`);
+      console.log('Method:', request.method || 'blur');
+      console.log('Quality:', request.quality || 'high');
+      console.log('Image data length:', cleanImageData.length);
+      console.log('Image data preview:', cleanImageData.substring(0, 100) + '...');
+      
       const response = await fetch(`${this.baseUrl}/anonymize-json`, {
         method: 'POST',
         headers: {
@@ -81,11 +88,23 @@ class FaceAnonymizationService {
         }),
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
       if (!response.ok) {
-        throw new Error(`Face anonymization failed: ${response.status} ${response.statusText}`);
+        // Try to get error details
+        let errorDetails = '';
+        try {
+          const errorText = await response.text();
+          errorDetails = ` - ${errorText}`;
+        } catch (e) {
+          // Ignore if we can't read error text
+        }
+        throw new Error(`Face anonymization failed: ${response.status} ${response.statusText}${errorDetails}`);
       }
 
       const result = await response.json();
+      console.log('Face anonymization successful, returning result');
       return result;
     } catch (error) {
       console.error('Face anonymization error:', error);
@@ -99,7 +118,7 @@ class FaceAnonymizationService {
   async processImageWithChoice(
     imageBase64: string,
     options: {
-      method?: 'blur' | 'pixelate' | 'hybrid';
+      method?: 'blur' | 'pixelate' | 'hybrid' | 'solid';
       quality?: 'low' | 'medium' | 'high' | 'extreme';
     } = {}
   ): Promise<{

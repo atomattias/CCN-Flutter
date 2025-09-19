@@ -317,7 +317,7 @@ export default function CreateCaseScreen() {
         },
         body: JSON.stringify({
           image: base64,
-          method: 'blur',
+          method: 'solid',
           quality: 'high',
         }),
       });

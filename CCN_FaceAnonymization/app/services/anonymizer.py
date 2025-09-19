@@ -150,8 +150,34 @@ class FaceAnonymizer:
             Anonymized image as JPEG bytes
         """
         try:
-            # Decode image
+            # Try to decode image with OpenCV first
             image = cv2.imdecode(np.frombuffer(image_bytes, np.uint8), cv2.IMREAD_COLOR)
+            
+            # If OpenCV fails, try with Pillow (for HEIC and other formats)
+            if image is None or image.size == 0:
+                try:
+                    from PIL import Image
+                    import io
+                    from pillow_heif import register_heif_opener
+                    
+                    # Register HEIF opener for HEIC support
+                    register_heif_opener()
+                    
+                    # Try to open with Pillow
+                    pil_image = Image.open(io.BytesIO(image_bytes))
+                    
+                    # Convert to RGB if necessary (HEIC might be in different color space)
+                    if pil_image.mode != 'RGB':
+                        pil_image = pil_image.convert('RGB')
+                    
+                    # Convert PIL image to OpenCV format
+                    image = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
+                    
+                    logger.info(f"Successfully converted image using Pillow (format: {pil_image.format})")
+                    
+                except Exception as pillow_error:
+                    logger.error(f"Pillow conversion failed: {pillow_error}")
+                    raise ValueError("Invalid image file - unsupported format")
             
             if image is None or image.size == 0:
                 raise ValueError("Invalid image file")

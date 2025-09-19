@@ -1,9 +1,8 @@
 import { authService } from './authService';
-import { resizeImageForAnonymization } from '../utils/imageUtils';
 
 export interface FaceAnonymizationRequest {
   image: string; // base64 encoded image
-  method?: 'blur' | 'pixelate' | 'hybrid';
+  method?: 'blur' | 'pixelate' | 'hybrid' | 'solid';
   quality?: 'low' | 'medium' | 'high' | 'extreme';
 }
 
@@ -35,9 +34,8 @@ class FaceAnonymizationService {
    */
   async anonymizeFaces(request: FaceAnonymizationRequest): Promise<FaceAnonymizationResult> {
     try {
-      // Resize image if it's too large for the service
-      console.log('Resizing image for face anonymization...');
-      const resizedImage = await resizeImageForAnonymization(request.image, 500); // 500KB limit
+      // The image is already resized and converted to base64 by the calling code
+      console.log('Using pre-processed image for face anonymization...');
       
       // Get the auth token from AsyncStorage
       const token = await authService.getToken();
@@ -48,7 +46,7 @@ class FaceAnonymizationService {
       }
       
       const requestBody = {
-        image: resizedImage,
+        image: request.image,
         method: request.method || 'pixelate',
         quality: request.quality || 'medium',
       };
@@ -89,14 +87,24 @@ class FaceAnonymizationService {
         } catch (parseError) {
           // If we can't parse the error response, use the status text
           console.warn('Could not parse error response:', parseError);
-          const errorText = await response.text();
-          errorMessage = `${errorMessage} - ${errorText}`;
+          // Don't try to read the response again since it's already been consumed
         }
         throw new Error(errorMessage);
       }
 
+      // Log response details for debugging
+      console.log('Response status:', response.status);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+      
       const result = await response.json();
       console.log('Face anonymization completed successfully via backend proxy');
+      console.log('Response structure:', result);
+      
+      // Handle the wrapped response from backend
+      if (result.success && result.data) {
+        return result.data;
+      }
+      
       return result;
     } catch (error) {
       console.error('Face anonymization error:', error);
@@ -121,14 +129,13 @@ class FaceAnonymizationService {
   async processImageWithChoice(
     imageBase64: string,
     options: {
-      method?: 'blur' | 'pixelate' | 'hybrid';
+      method?: 'blur' | 'pixelate' | 'hybrid' | 'solid';
       quality?: 'low' | 'medium' | 'high' | 'extreme';
     } = {}
   ): Promise<ProcessImageWithChoiceResult> {
     try {
-      // Resize image if it's too large for the service
-      console.log('Resizing image for face anonymization with choice...');
-      const resizedImage = await resizeImageForAnonymization(imageBase64, 500); // 500KB limit
+      // The image is already resized and converted to base64 by the calling code
+      console.log('Using pre-processed image for face anonymization with choice...');
       
       // Get the auth token from AsyncStorage
       const token = await authService.getToken();
@@ -145,7 +152,7 @@ class FaceAnonymizationService {
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
-          image: resizedImage,
+          image: imageBase64,
           method: options.method || 'pixelate',
           quality: options.quality || 'medium',
         }),

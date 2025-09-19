@@ -94,16 +94,26 @@ export default function SecondOpinionScreen() {
             // Anonymize the image
             const result = await faceAnonymizationService.anonymizeFaces({
               image: base64Image,
-              method: 'blur',
+              method: 'solid',
               quality: 'high'
             });
             
+            console.log('Anonymization result:', {
+              facesDetected: result.faces_detected,
+              anonymizedImageLength: result.anonymized_image?.length || 0,
+              hasAnonymizedImage: !!result.anonymized_image
+            });
             return result.anonymized_image;
           } catch (error) {
             console.error('Failed to process image:', error);
+            console.error('Error details:', {
+              message: error instanceof Error ? error.message : 'Unknown error',
+              stack: error instanceof Error ? error.stack : undefined,
+              type: typeof error
+            });
             
             // Handle specific error cases
-            if (error instanceof Error && (error.message.includes('413') || error.message.includes('too large'))) {
+            if (error instanceof Error && (error.message.includes('413') || error.message.includes('too large') || error.message.includes('too big'))) {
               console.warn('Image too large for anonymization, using original image');
               Alert.alert(
                 'Image Too Large',
@@ -118,6 +128,14 @@ export default function SecondOpinionScreen() {
                   },
                   { text: 'Send Without Protection', style: 'default' }
                 ]
+              );
+            } else {
+              // For other errors, show a generic error message
+              console.warn('Image processing failed, using original image');
+              Alert.alert(
+                'Processing Error',
+                'Failed to process image for privacy protection. It will be sent without protection.',
+                [{ text: 'OK', style: 'default' }]
               );
             }
             
@@ -139,10 +157,18 @@ export default function SecondOpinionScreen() {
     try {
       // Use the resizing utility to ensure the image is within size limits
       console.log('Converting and resizing image for upload...');
-      const resizedBase64 = await resizeImageForAnonymization(imageUri, 500); // 500KB limit
+      const resizedBase64 = await resizeImageForAnonymization(imageUri, 2000); // 2MB limit
       
       // Remove data:image/...;base64, prefix to get just the base64 string
-      const base64 = resizedBase64.split(',')[1];
+      let base64 = resizedBase64;
+      if (resizedBase64.startsWith('data:')) {
+        const commaIndex = resizedBase64.indexOf(',');
+        if (commaIndex !== -1) {
+          base64 = resizedBase64.substring(commaIndex + 1);
+        }
+      }
+      
+      console.log('Base64 length after processing:', base64.length);
       return base64;
     } catch (error) {
       console.error('Failed to convert and resize image:', error);
@@ -549,6 +575,13 @@ export default function SecondOpinionScreen() {
                 const displayImage = enableImagePrivacy && anonymizedImages[index] 
                   ? `data:image/jpeg;base64,${anonymizedImages[index]}` 
                   : image;
+                
+                console.log(`Image ${index}:`, {
+                  enableImagePrivacy,
+                  hasAnonymizedImage: !!anonymizedImages[index],
+                  anonymizedImageLength: anonymizedImages[index]?.length || 0,
+                  displayImageLength: displayImage.length
+                });
                 
                 return (
                   <View key={index} style={styles.imageItem}>
